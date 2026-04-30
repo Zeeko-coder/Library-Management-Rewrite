@@ -1,21 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Library Management System</title>
-    <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="src/css/styles.css">
 </head>
+
 <body>
     <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">
-                <i class="fas fa-book-reader"></i>
+                <!-- <i class="fas fa-book-reader"></i> -->
+
+                <img src="img/logo.png" alt="LibroTech Logo">
                 <span>LibroTech</span>
             </div>
+
             <ul class="nav-menu">
                 <li><a href="#home" class="nav-link active">Home</a></li>
                 <li><a href="#about" class="nav-link">About</a></li>
@@ -23,8 +28,7 @@
                 <li><a href="#contact" class="nav-link">Contact</a></li>
             </ul>
             <div class="nav-buttons">
-                <button class="btn btn-outline" id="loginBtn">Login</button>
-                <button class="btn btn-primary" id="registerBtn">Register</button>
+                <a href="public/loginAs.php"><button class="btn btn-outline">Login</button></a>
             </div>
             <div class="hamburger">
                 <span></span>
@@ -45,8 +49,8 @@
                 From cataloging to circulation, we've got you covered.
             </p>
             <div class="hero-buttons">
-                <button class="btn btn-primary btn-large" id="getStartedBtn">Get Started</button>
-                <button class="btn btn-outline btn-large" id="learnMoreBtn">Learn More</button>
+                <a href="public/loginAs.php"><button class="btn btn-primary btn-large" id="getStartedBtn">Get Started</button></a>
+                <a href="#about"><button class="btn btn-outline btn-large" id="learnMoreBtn">Learn More</button></a>
             </div>
             <div class="hero-stats">
                 <div class="stat">
@@ -114,7 +118,6 @@
                             <span>Secure & Reliable</span>
                         </div>
                     </div>
-                    <button class="btn btn-primary" id="aboutCtaBtn">Our Story</button>
                 </div>
             </div>
         </div>
@@ -278,18 +281,20 @@
     <div class="modal" id="loginModal">
         <div class="modal-content">
             <button class="modal-close" id="closeLogin">&times;</button>
+
             <div class="modal-header">
                 <h2>Welcome Back</h2>
                 <p>Login to access your account</p>
             </div>
+
             <form id="loginForm">
                 <div class="form-group">
                     <label for="loginEmail">Username</label>
-                    <input type="text" id="loginEmail" placeholder="Enter your username" required>
+                    <input type="text" id="loginEmail" placeholder="Example@12345" required>
                 </div>
                 <div class="form-group">
                     <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                    <input type="password" id="loginPassword" placeholder="Type your password" required>
                 </div>
                 <div class="form-options">
                     <label class="checkbox-label">
@@ -298,6 +303,7 @@
                     </label>
                     <a href="#" class="forgot-link">Forgot password?</a>
                 </div>
+
                 <button type="submit" class="btn btn-primary btn-block">Login</button>
             </form>
             <div class="modal-footer">
@@ -314,20 +320,23 @@
                 <h2>Create Account</h2>
                 <p>Join LibroTech today</p>
             </div>
-            <form id="registerForm">
+            <div id="registerError" class="error-message" style="display: none;"></div>
+            <div id="registerSuccess" class="success-message" style="display: none;"></div>
+            <form id="registerForm" action="process_register.php" method="POST">
                 <div class="form-group">
                     <label for="registerName">Firstname</label>
-                    <input type="text" id="registerName" placeholder="Enter your first name" required>
+                    <input type="text" id="registerName" name="firstname" placeholder="e.g. John" required>
                 </div>
 
                 <div class="form-group">
                     <label for="registerLastName">Lastname</label>
-                    <input type="text" id="registerLastName" placeholder="Enter your last name" required>
+                    <input type="text" id="registerLastName" name="lastname" placeholder="e.g. Doe" required>
                 </div>
 
                 <div class="form-group">
                     <label for="civilStatus">Civil Status</label>
                     <select name="civilStatus">
+                        <option value="">-- Select Civil status --</option>
                         <option value="single">Single</option>
                         <option value="married">Married</option>
                         <option value="widowed">Widowed</option>
@@ -336,29 +345,54 @@
 
                 <div class="form-group">
                     <label for="userRole">User Role</label>
-                    <select name="userRole">
+                    <select name="userRole" id="role">
+                        <option value="">-- Select User Role --</option>
                         <option value="student">Student</option>
                         <option value="librarian">Librarian</option>
                     </select>
                 </div>
 
+                <div class="form-group" id="studentFields" style="display: none;">
+                    <label for="studentID">Student ID</label>
+                    <input type="text" id="studentID" name="studentID" placeholder="25-xxxx" required>
+
+                    <label for="program">Program</label>
+                    <select name="program" id="program">
+                        <option value="">-- Select Program --</option>
+                        <option value="BSIT">BSIT</option>
+                        <option value="BSIS">BSIS</option>
+                        <option value="BLIS">BLIS</option>
+                        <option value="BSEMEC">BSEMEC</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="librarianFields" style="display: none;">
+                    <label for="librarianID">Librarian ID</label>
+                    <input type="text" id="librarianID" name="librarianID" placeholder="LIB-xxxx" required>
+                </div>
+
                 <div class="form-group">
                     <label for="registerEmail">Email</label>
-                    <input type="email" id="registerEmail" placeholder="Enter your email" required>
+                    <input type="email" id="registerEmail" name="email" placeholder="e.g. john.doe@example.com" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="registerPhone">Phone Number</label>
-                    <input type="tel" id="registerPhone" placeholder="Enter your phone number">
+                    <input type="tel" id="registerPhone" name="phoneNumber" placeholder="e.g. +63 917 123 4567" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="registerUsername">Username</label>
+                    <input type="text" id="registerUsername" name="username" placeholder="e.g. john_doe" required>
                 </div>
 
                 <div class="form-group">
                     <label for="registerPassword">Password</label>
-                    <input type="password" id="registerPassword" placeholder="Create a password" required>
+                    <input type="password" id="registerPassword" name="password" placeholder="Create a password" required>
                 </div>
                 <div class="form-group">
                     <label for="registerConfirm">Confirm Password</label>
-                    <input type="password" id="registerConfirm" placeholder="Confirm your password" required>
+                    <input type="password" id="registerConfirm" name="confirmPassword" placeholder="Confirm your password" required>
                 </div>
                 <div class="form-options">
                     <label class="checkbox-label">
@@ -366,7 +400,7 @@
                         <span>I agree to the <a href="#">Terms of Service</a></span>
                     </label>
                 </div>
-                <button type="submit" class="btn btn-primary btn-block">Register</button>
+                <input type="submit" value="Register" class="btn btn-primary btn-block" value="Register">
             </form>
             <div class="modal-footer">
                 <p>Already have an account? <a href="#" id="showLogin">Login here</a></p>
@@ -374,6 +408,7 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="src/js/script.js"></script>
 </body>
+
 </html>

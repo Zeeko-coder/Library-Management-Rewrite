@@ -79,6 +79,18 @@ function closeModal(modal) {
     document.body.style.overflow = '';
 }
 
+// ===== Show fields based on the user role =====
+document.getElementById('role').addEventListener('change', function() {
+    document.getElementById('studentFields').style.display = 'none';
+    document.getElementById('librarianFields').style.display = 'none';
+
+    if(this.value === 'student') {
+        document.getElementById('studentFields').style.display = 'block';
+    } else if(this.value === 'librarian') {
+        document.getElementById('librarianFields').style.display = 'block';
+    }
+})
+
 // Login Modal Events
 loginBtn.addEventListener('click', () => openModal(loginModal));
 getStartedBtn.addEventListener('click', () => openModal(loginModal));
@@ -142,28 +154,6 @@ loginForm.addEventListener('submit', (e) => {
     // Show success message
     alert('Login functionality will be implemented with backend integration.');
     closeModal(loginModal);
-});
-
-registerForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const name = document.getElementById('registerName').value;
-    const email = document.getElementById('registerEmail').value;
-    const phone = document.getElementById('registerPhone').value;
-    const password = document.getElementById('registerPassword').value;
-    const confirm = document.getElementById('registerConfirm').value;
-
-    // Validate passwords match
-    if (password !== confirm) {
-        alert('Passwords do not match!');
-        return;
-    }
-
-    // Simulate registration (replace with actual API call)
-    console.log('Registration:', { name, email, phone, password });
-
-    // Show success message
-    alert('Registration functionality will be implemented with backend integration.');
-    closeModal(registerModal);
 });
 
 contactForm.addEventListener('submit', (e) => {
@@ -333,93 +323,9 @@ window.addEventListener('load', () => {
     }, 100);
 });
 
-// ===== Enhanced Scroll Indicator Animation =====
-const scrollIndicator = document.querySelector('.scroll-indicator');
-if (scrollIndicator) {
-    window.addEventListener('scroll', () => {
-        const scrollPercent = window.scrollY / (document.body.scrollHeight - window.innerHeight);
-        scrollIndicator.style.opacity = 1 - scrollPercent * 3;
-        if (scrollPercent > 0.3) {
-            scrollIndicator.style.display = 'none';
-        } else {
-            scrollIndicator.style.display = 'flex';
-        }
-    });
-}
+// ===== AJAx Requests ======
 
-// ===== Button Ripple Effect =====
-document.querySelectorAll('.btn').forEach(button => {
-    button.addEventListener('click', function(e) {
-        const ripple = document.createElement('span');
-        const rect = this.getBoundingClientRect();
-        const size = Math.max(rect.width, rect.height);
-        const x = e.clientX - rect.left - size / 2;
-        const y = e.clientY - rect.top - size / 2;
-
-        ripple.style.cssText = `
-            position: absolute;
-            width: ${size}px;
-            height: ${size}px;
-            left: ${x}px;
-            top: ${y}px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            transform: scale(0);
-            animation: ripple 0.6s ease-out;
-            pointer-events: none;
-        `;
-
-        this.style.position = 'relative';
-        this.style.overflow = 'hidden';
-        this.appendChild(ripple);
-
-        setTimeout(() => ripple.remove(), 600);
-    });
-});
-
-// Add ripple keyframes
-const rippleStyle = document.createElement('style');
-rippleStyle.textContent = `
-    @keyframes ripple {
-        to {
-            transform: scale(4);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(rippleStyle);
-
-// ===== Floating Animation for Feature Icons =====
-document.querySelectorAll('.feature-icon').forEach((icon, index) => {
-    icon.style.animation = `float 3s ease-in-out ${index * 0.2}s infinite`;
-});
-
-// Add float keyframes if not already present
-const floatStyle = document.createElement('style');
-floatStyle.textContent = `
-    @keyframes float {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-10px); }
-    }
-`;
-document.head.appendChild(floatStyle);
-
-// ===== Typing Effect for Hero Subtitle (Optional Enhancement) =====
-function typeWriter(element, text, speed = 100) {
-    let i = 0;
-    element.textContent = '';
-
-    function type() {
-        if (i < text.length) {
-            element.textContent += text.charAt(i);
-            i++;
-            setTimeout(type, speed);
-        }
-    }
-
-    type();
-}
-
+let formData = new FormData();
 // ===== Console Welcome Message =====
 console.log('%c Welcome to LibroTech! ', 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 20px; padding: 15px; border-radius: 8px;');
 console.log('%c Library Management System - Ready to use ', 'color: #4f46e5; font-size: 14px; font-weight: bold;');
