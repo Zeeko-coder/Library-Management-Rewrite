@@ -1,0 +1,51 @@
+<svg width="200" height="240" viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="libro_gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E40AF" /> <!-- Deep Blue -->
+      <stop offset="50%" stop-color="#3B82F6" /> <!-- Blue -->
+      <stop offset="100%" stop-color="#10B981" /> <!-- Emerald -->
+    </linearGradient>
+    <linearGradient id="flame_gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" /> <!-- Amber/Orange -->
+      <stop offset="100%" stop-color="#EF4444" /> <!-- Red -->
+    </linearGradient>
+  </defs>
+
+  <!-- Torch Icon (Above the book) -->
+  <g transform="translate(85, 10)">
+    <!-- Torch Handle -->
+    <path d="M10 40L15 60H25L30 40H10Z" fill="url(#libro_gradient)"/>
+    <!-- Torch Top/Bowl -->
+    <path d="M5 35C5 30 35 30 35 35L30 42H10L5 35Z" fill="url(#libro_gradient)"/>
+    <!-- Flame -->
+    <path d="M20 5C25 15 32 20 30 32C25 38 15 38 10 32C8 20 15 15 20 5Z" fill="url(#flame_gradient)">
+      <animate attributeName="d" 
+        values="M20 5C25 15 32 20 30 32C25 38 15 38 10 32C8 20 15 15 20 5Z;
+                M20 2C28 12 35 18 32 30C28 36 12 36 8 30C5 18 12 12 20 2Z;
+                M20 5C25 15 32 20 30 32C25 38 15 38 10 32C8 20 15 15 20 5Z" 
+        dur="2s" repeatCount="indefinite" />
+    </path>
+  </g>
+
+  <!-- Book Section (Adjusted Y position) -->
+  <g transform="translate(0, 70)">
+    <!-- Outer Frame -->
+    <path d="M50 40V140M150 40V140" stroke="url(#libro_gradient)" stroke-width="6" stroke-linecap="round"/>
+
+    <!-- Book Pages Shape -->
+    <path d="M100 50C80 40 40 40 30 55V145C40 130 80 130 100 140M100 50C120 40 160 40 170 55V145C160 130 120 130 100 140" stroke="url(#libro_gradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Central Spine -->
+    <path d="M100 50V140" stroke="url(#libro_gradient)" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- Circuitry Left -->
+    <path d="M100 110L80 90M80 90V75M80 90L65 75" stroke="url(#libro_gradient)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="80" cy="70" r="4" fill="url(#libro_gradient)"/>
+    <circle cx="65" cy="70" r="4" fill="url(#libro_gradient)"/>
+    
+    <!-- Circuitry Right -->
+    <path d="M100 110L120 90M120 90V75M120 90L135 75" stroke="url(#libro_gradient)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="120" cy="70" r="4" fill="url(#libro_gradient)"/>
+    <circle cx="135" cy="70" r="4" fill="url(#libro_gradient)"/>
+  </g>
+</svg>

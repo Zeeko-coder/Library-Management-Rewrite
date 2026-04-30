@@ -1,3 +1,4 @@
+<?php session_start(); ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -50,6 +51,7 @@
                     <option value="">Select gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
+                    <option value="Other">Other</option>
                 </select>
             </div>
 
@@ -98,7 +100,7 @@
         </form>
 
         <div class="login-link">
-            <p>Already have an account? <a href="librarianLogin.php">Sign in</a></p>
+            <p>Already have an account? <a href="studentLogin.php">Sign in</a></p>
         </div>
 
         <div class="back-home">

@@ -10,7 +10,7 @@
 <body>
     <div class="login-container">
         <div class="logo">
-            <img src="../img/logo.png" alt="LibroTech Logo">
+            <img src="../img/logo.svg" alt="LibroTech Logo">
         </div>
         <h1>Welcome to LibroTech</h1>
         <p>Select your login type to continue</p>

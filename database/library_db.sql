@@ -4,8 +4,8 @@ CREATE DATABASE IF NOT EXISTS library_management_system;
 USE library_management_system;
 
 -- Users table
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
     firstname VARCHAR(100) NOT NULL,
     lastname VARCHAR(100) NOT NULL,
     civilStatus VARCHAR(20) NOT NULL,
@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
     phoneNumber VARCHAR(20) NOT NULL,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    role VARCHAR(20),
     approval_status VARCHAR(20) DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

@@ -15,10 +15,7 @@
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">
-                <!-- <i class="fas fa-book-reader"></i> -->
-
-                <img src="img/logo.png" alt="LibroTech Logo">
-                <span>LibroTech</span>
+                <img src="img/logo.svg" alt="LibroTech Logo">
             </div>
 
             <ul class="nav-menu">
@@ -28,7 +25,6 @@
                 <li><a href="#contact" class="nav-link">Contact</a></li>
             </ul>
             <div class="nav-buttons">
-                <a href="public/loginAs.php"><button class="btn btn-outline">Login</button></a>
             </div>
             <div class="hamburger">
                 <span></span>
