@@ -15,7 +15,8 @@
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">
-                <img src="img/logo.svg" alt="LibroTech Logo">
+                <img src="img/techbook.png" alt="LibroTech Logo">
+                <span>LibroTech</span>
             </div>
 
             <ul class="nav-menu">
@@ -36,6 +37,11 @@
 
     <!-- Home Section -->
     <section id="home" class="hero">
+        <div class="hero-bg-slides">
+            <div class="slide active" style="background-image: url('img/hero-bg.png');"></div>
+            <div class="slide" style="background-image: url('img/hero-bg-2.png');"></div>
+            <div class="slide" style="background-image: url('img/hero-bg-3.png');"></div>
+        </div>
         <div class="hero-overlay"></div>
         <div class="hero-content">
             <h1 class="hero-title">Welcome to <span class="highlight">LibroTech</span></h1>

@@ -18,18 +18,19 @@ $page_title = "Admin Login";
     </style>
 </head>
 <body>
+    <div class="background-overlay"></div>
     <div class="login-container">
-        <div class="logo">
+        <div class="role-badge">
             <i class="fas fa-user-shield"></i>
         </div>
-        <h1>Admin Login</h1>
-        <p>LibroTech Library Management System</p>
+        <h1>Admin Portal</h1>
+        <p>LibroTech Management System</p>
 
         <form action="../auth/process_admin_login.php" method="POST">
             <div class="form-group">
                 <label for="adminID">Admin ID</label>
                 <input type="text" id="adminID" name="adminID" placeholder="Enter Admin ID" 
-                       class="<?php echo isset($fieldErrors['adminID']) ? 'input-error' : ''; ?>">
+                       class="<?php echo isset($fieldErrors['adminID']) ? 'input-error' : ''; ?>" required>
                 
                 <?php if (isset($fieldErrors['adminID'])): ?>
                     <div class="error-message"><?php echo $fieldErrors['adminID']; ?></div>
@@ -39,7 +40,7 @@ $page_title = "Admin Login";
             <div class="form-group">
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" placeholder="Enter password"
-                       class="<?php echo isset($fieldErrors['password']) ? 'input-error' : ''; ?>">
+                       class="<?php echo isset($fieldErrors['password']) ? 'input-error' : ''; ?>" required>
                 
                 <?php if (isset($fieldErrors['password'])): ?>
                     <div class="error-message"><?php echo $fieldErrors['password']; ?></div>
@@ -48,14 +49,14 @@ $page_title = "Admin Login";
 
 
             <button type="submit" class="login-btn">
-                <i class="fas fa-sign-in-alt"></i> Login
+                <i class="fas fa-sign-in-alt"></i> Login to Dashboard
             </button>
         </form>
 
         <div class="back-home">
             <a href="loginAs.php">
                 <i class="fas fa-arrow-left"></i>
-                Back to Login Options
+                Switch Login Type
             </a>
         </div>
     </div>

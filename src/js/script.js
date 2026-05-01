@@ -55,10 +55,12 @@ function updateActiveNavLink() {
 }
 
 // ===== Mobile Menu Toggle =====
-hamburger.addEventListener('click', () => {
-    navMenu.classList.toggle('active');
-    hamburger.classList.toggle('active');
-});
+if (hamburger && navMenu) {
+    hamburger.addEventListener('click', () => {
+        navMenu.classList.toggle('active');
+        hamburger.classList.toggle('active');
+    });
+}
 
 // Close mobile menu when clicking on a link
 navLinks.forEach(link => {
@@ -80,35 +82,45 @@ function closeModal(modal) {
 }
 
 // ===== Show fields based on the user role =====
-document.getElementById('role').addEventListener('change', function() {
-    document.getElementById('studentFields').style.display = 'none';
-    document.getElementById('librarianFields').style.display = 'none';
+const roleSelect = document.getElementById('role');
+if (roleSelect) {
+    roleSelect.addEventListener('change', function () {
+        const studentFields = document.getElementById('studentFields');
+        const librarianFields = document.getElementById('librarianFields');
 
-    if(this.value === 'student') {
-        document.getElementById('studentFields').style.display = 'block';
-    } else if(this.value === 'librarian') {
-        document.getElementById('librarianFields').style.display = 'block';
-    }
-})
+        if (studentFields) studentFields.style.display = 'none';
+        if (librarianFields) librarianFields.style.display = 'none';
+
+        if (this.value === 'student' && studentFields) {
+            studentFields.style.display = 'block';
+        } else if (this.value === 'librarian' && librarianFields) {
+            librarianFields.style.display = 'block';
+        }
+    });
+}
 
 // Login Modal Events
-loginBtn.addEventListener('click', () => openModal(loginModal));
-getStartedBtn.addEventListener('click', () => openModal(loginModal));
-closeLogin.addEventListener('click', () => closeModal(loginModal));
-showRegister.addEventListener('click', (e) => {
-    e.preventDefault();
-    closeModal(loginModal);
-    setTimeout(() => openModal(registerModal), 300);
-});
+if (loginBtn) loginBtn.addEventListener('click', () => openModal(loginModal));
+if (getStartedBtn) getStartedBtn.addEventListener('click', () => openModal(loginModal));
+if (closeLogin) closeLogin.addEventListener('click', () => closeModal(loginModal));
+if (showRegister) {
+    showRegister.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeModal(loginModal);
+        setTimeout(() => openModal(registerModal), 300);
+    });
+}
 
 // Register Modal Events
-registerBtn.addEventListener('click', () => openModal(registerModal));
-closeRegister.addEventListener('click', () => closeModal(registerModal));
-showLogin.addEventListener('click', (e) => {
-    e.preventDefault();
-    closeModal(registerModal);
-    setTimeout(() => openModal(loginModal), 300);
-});
+if (registerBtn) registerBtn.addEventListener('click', () => openModal(registerModal));
+if (closeRegister) closeRegister.addEventListener('click', () => closeModal(registerModal));
+if (showLogin) {
+    showLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeModal(registerModal);
+        setTimeout(() => openModal(loginModal), 300);
+    });
+}
 
 // Close modal when clicking outside
 window.addEventListener('click', (e) => {
@@ -129,49 +141,65 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ===== Learn More Button - Smooth Scroll to About =====
-learnMoreBtn.addEventListener('click', () => {
-    document.getElementById('about').scrollIntoView({
-        behavior: 'smooth'
+if (learnMoreBtn) {
+    learnMoreBtn.addEventListener('click', () => {
+        const aboutSection = document.getElementById('about');
+        if (aboutSection) {
+            aboutSection.scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
     });
-});
+}
 
 // About CTA Button - Scroll to Features
-aboutCtaBtn.addEventListener('click', () => {
-    document.getElementById('features').scrollIntoView({
-        behavior: 'smooth'
+if (aboutCtaBtn) {
+    aboutCtaBtn.addEventListener('click', () => {
+        const featuresSection = document.getElementById('features');
+        if (featuresSection) {
+            featuresSection.scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
     });
-});
+}
 
 // ===== Form Submissions =====
-loginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
+if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const emailInput = document.getElementById('loginEmail');
+        const passwordInput = document.getElementById('loginPassword');
+        const email = emailInput ? emailInput.value : '';
+        const password = passwordInput ? passwordInput.value : '';
 
-    // Simulate login (replace with actual authentication)
-    console.log('Login attempt:', { email, password });
+        // Simulate login (replace with actual authentication)
+        console.log('Login attempt:', { email, password });
 
-    // Show success message
-    alert('Login functionality will be implemented with backend integration.');
-    closeModal(loginModal);
-});
+        // Show success message
+        alert('Login functionality will be implemented with backend integration.');
+        closeModal(loginModal);
+    });
+}
 
-contactForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const formData = new FormData(contactForm);
-    const data = Object.fromEntries(formData);
+if (contactForm) {
+    contactForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = new FormData(contactForm);
+        const data = Object.fromEntries(formData);
 
-    // Simulate contact form submission
-    console.log('Contact form:', data);
+        // Simulate contact form submission
+        console.log('Contact form:', data);
 
-    // Show success message
-    alert('Thank you for your message! We will get back to you soon.');
-    contactForm.reset();
-});
+        // Show success message
+        alert('Thank you for your message! We will get back to you soon.');
+        contactForm.reset();
+    });
+}
 
 // ===== Smooth Scroll for All Anchor Links =====
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function(e) {
+    anchor.addEventListener('click', function (e) {
         const href = this.getAttribute('href');
         if (href !== '#' && href.length > 1) {
             e.preventDefault();
@@ -323,9 +351,28 @@ window.addEventListener('load', () => {
     }, 100);
 });
 
-// ===== AJAx Requests ======
+// ===== Hero Background Slideshow =====
+function initHeroSlideshow() {
+    const slides = document.querySelectorAll('.hero-bg-slides .slide');
+    if (slides.length <= 1) return;
 
-let formData = new FormData();
+    let currentSlide = 0;
+    const slideInterval = 5000; // Change image every 5 seconds
+
+    function nextSlide() {
+        slides[currentSlide].classList.remove('active');
+        currentSlide = (currentSlide + 1) % slides.length;
+        slides[currentSlide].classList.add('active');
+    }
+
+    setInterval(nextSlide, slideInterval);
+}
+
+// Initialize slideshow
+document.addEventListener('DOMContentLoaded', () => {
+    initHeroSlideshow();
+});
+
 // ===== Console Welcome Message =====
 console.log('%c Welcome to LibroTech! ', 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 20px; padding: 15px; border-radius: 8px;');
 console.log('%c Library Management System - Ready to use ', 'color: #4f46e5; font-size: 14px; font-weight: bold;');

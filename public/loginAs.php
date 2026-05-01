@@ -3,16 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Login - LibroTech</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../src/css/loginAs.css">
 </head>
 <body>
+    <div class="background-overlay"></div>
     <div class="login-container">
         <div class="logo">
-            <img src="../img/logo.svg" alt="LibroTech Logo">
+            <img src="../img/techbook.png" alt="LibroTech Logo">
         </div>
-        <h1>Welcome to LibroTech</h1>
+        <h1>Welcome to <span class="highlight">LibroTech</span></h1>
         <p>Select your login type to continue</p>
 
         <div class="login-options">

@@ -11,22 +11,23 @@
 </head>
 
 <body>
+    <div class="background-overlay"></div>
     <div class="login-container">
-        <div class="logo">
+        <div class="role-badge">
             <i class="fas fa-user-graduate"></i>
         </div>
-        <h1>Student Login</h1>
-        <p>LibroTech Library Management System</p>
+        <h1>Student Portal</h1>
+        <p>LibroTech Management System</p>
 
         <form action="../auth/process_student_login.php" method="POST">
             <div class="form-group">
                 <label for="username">Username</label>
-                <input type="text" name="username" placeholder="e.g. jhon_doe" required>
+                <input type="text" id="username" name="username" placeholder="e.g. jhon_doe" required>
             </div>
 
             <div class="form-group">
                 <label for="otpMethod">OTP Method</label>
-                <select name="otpMethod" id="otpMethod">
+                <select name="otpMethod" id="otpMethod" required>
                     <option value="">Select OTP Method</option>
                     <option value="email">Email</option>
                     <option value="sms">SMS</option>
@@ -35,34 +36,34 @@
 
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Type your password">
+                <input type="password" id="password" name="password" placeholder="Type your password" required>
             </div>
 
             <?php
             if (isset($_SESSION['error'])) {
-                echo '<p class="error-message">' . htmlspecialchars($_SESSION['error']) . '</p>';
+                echo '<div class="error-message">' . htmlspecialchars($_SESSION['error']) . '</div>';
                 unset($_SESSION['error']);
             }
             if (isset($_SESSION['success'])) {
-                echo '<p class="success-message">' . htmlspecialchars($_SESSION['success']) . '</p>';
+                echo '<div class="success-message" style="color: #059669; font-size: 13px; margin-bottom: 10px;">' . htmlspecialchars($_SESSION['success']) . '</div>';
                 unset($_SESSION['success']);
             }
             ?>
 
             <button type="submit" class="login-btn">
-                <i class="fas fa-sign-in-alt"></i> Login
+                <i class="fas fa-sign-in-alt"></i> Login to Portal
             </button>
         </form>
 
         <div class="back-home">
             <a href="loginAs.php">
                 <i class="fas fa-arrow-left"></i>
-                Back to Login Options
+                Switch Login Type
             </a>
         </div>
 
-        <div class="register-link">
-            <p>Don't have an account? <a href="studentRegister.php">Sign up</a></p>
+        <div class="register-link" style="margin-top: 15px; font-size: 14px;">
+            <p>Don't have an account? <a href="studentRegister.php" style="color: var(--accent-color); font-weight: 600; text-decoration: none;">Sign up</a></p>
         </div>
     </div>
 </body>
