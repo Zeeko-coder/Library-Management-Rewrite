@@ -55,10 +55,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         // Check if username or email already exists
-        $stmt = $pdo->prepare("SELECT user_id FROM users WHERE username = ? OR email = ?");
-        $stmt->execute([$username, $email]);
+        $stmt = $pdo->prepare("SELECT user_id FROM users WHERE username = ?");
+        $stmt->execute([$username]);
         if ($stmt->fetch()) {
-            $_SESSION['error'] = "Username or Email already exists.";
+            $_SESSION['error'] = "Username already exists.";
             header("Location: ../public/studentRegister.php");
             exit();
         }

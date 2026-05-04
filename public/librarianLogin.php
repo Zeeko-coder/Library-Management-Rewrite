@@ -1,3 +1,4 @@
+<?php session_start(); ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -19,7 +20,7 @@
         <h1>Librarian Portal</h1>
         <p>LibroTech Management System</p>
 
-        <form action="../librarian_login_process.php" method="POST">
+        <form action="../auth/process_librarian_login.php" method="POST">
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" placeholder="e.g. jhon_doe" required>

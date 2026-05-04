@@ -12,6 +12,7 @@
 </head>
 
 <body>
+    <div class="background-overlay"></div>
     <div class="register-container">
         <div class="logo">
             <i class="fas fa-user-tie"></i>
@@ -32,35 +33,39 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label for="civilStatus">Civil Status</label>
-                <select id="civilStatus" name="civilStatus" required>
-                    <option value="">Select civil status</option>
-                    <option value="Single">Single</option>
-                    <option value="Married">Married</option>
-                    <option value="Divorced">Divorced</option>
-                    <option value="Widowed">Widowed</option>
-                </select>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="civilStatus">Civil Status</label>
+                    <select id="civilStatus" name="civilStatus" required>
+                        <option value="">Select civil status</option>
+                        <option value="Single">Single</option>
+                        <option value="Married">Married</option>
+                        <option value="Divorced">Divorced</option>
+                        <option value="Widowed">Widowed</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="gender">Gender</label>
+                    <select id="gender" name="gender" required>
+                        <option value="">Select gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="gender">Gender</label>
-                <select id="gender" name="gender" required>
-                    <option value="">Select gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="phonenumber">Phone Number</label>
+                    <input type="tel" id="phonenumber" name="phonenumber" placeholder="e.g. 09123456789" required>
+                </div>
 
-            <div class="form-group">
-                <label for="phonenumber">Phone Number</label>
-                <input type="tel" id="phonenumber" name="phonenumber" placeholder="e.g. 09123456789" required>
-            </div>
-
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" placeholder="example@gmail.com" required>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="example@gmail.com" required>
+                </div>
             </div>
 
             <div class="form-group">

@@ -31,7 +31,7 @@ body {
 }
 
 .background-overlay {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
@@ -41,7 +41,7 @@ body {
 }
 
 .login-container {
-    position: relative;
+    position: fixed;
     z-index: 2;
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(12px);
@@ -50,7 +50,7 @@ body {
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-xl);
     text-align: center;
-    max-width: 450px;
+    max-width: 600px;
     width: 100%;
     border: 1px solid rgba(255, 255, 255, 0.3);
     animation: fadeInUp 0.8s ease-out;
@@ -98,7 +98,8 @@ p {
     color: var(--text-dark);
 }
 
-.form-group input, .form-group select {
+.form-group input,
+.form-group select {
     width: 100%;
     padding: 14px 18px;
     border-radius: 10px;
@@ -109,7 +110,8 @@ p {
     background: rgba(255, 255, 255, 0.9);
 }
 
-.form-group input:focus, .form-group select:focus {
+.form-group input:focus,
+.form-group select:focus {
     outline: none;
     border-color: var(--accent-color);
     box-shadow: 0 0 0 4px rgba(var(--accent-color-rgb), 0.1);
@@ -175,11 +177,11 @@ p {
     .login-container {
         padding: 35px 25px;
     }
-    
+
     h1 {
         font-size: 22px;
     }
-    
+
     .role-badge {
         width: 70px;
         height: 70px;
@@ -192,6 +194,7 @@ p {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);

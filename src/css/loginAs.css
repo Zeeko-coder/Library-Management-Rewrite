@@ -25,21 +25,45 @@ body {
     justify-content: center;
     position: relative;
     padding: 40px 20px;
-    background: url('/img/hero-bg.png') no-repeat center center/cover;
+    background: url('../../img/hero-bg.png') no-repeat center center/cover;
     background-attachment: fixed;
     overflow-x: hidden;
     overflow-y: auto;
+    opacity: 0;
+    animation: pageLoad 0.8s ease forwards;
+}
+
+@keyframes pageLoad {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 /* Background Overlay matching Hero Section */
 .background-overlay {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
     background: linear-gradient(135deg, rgba(30, 58, 138, 0.8) 0%, rgba(23, 37, 84, 0.9) 100%);
     z-index: 1;
+}
+
+.background-overlay::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+    background-size: 50px 50px;
+    animation: float 20s infinite linear;
+}
+
+@keyframes float {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(50px); }
 }
 
 .login-container {
@@ -52,7 +76,7 @@ body {
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-xl);
     text-align: center;
-    max-width: 480px;
+    max-width: 600px;
     width: 100%;
     border: 1px solid rgba(255, 255, 255, 0.2);
     animation: fadeInUp 0.8s ease-out;
@@ -104,7 +128,8 @@ p {
 .login-btn {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 15px;
     padding: 18px 25px;
     background: var(--bg-white);
     color: var(--text-dark);
@@ -133,25 +158,38 @@ p {
     transform: scale(1.1);
 }
 
-/* Specific Style for Student to match landing primary */
-.login-btn.student {
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-    color: white;
-    border: none;
+/* Specific Hover Styles */
+.login-btn.librarian:hover {
+    background: #d9770614;
+    color: #D97706;
+    border-color: #D97706;
 }
 
-.login-btn.student i {
-    color: white;
+.login-btn.librarian:hover i {
+    color: #D97706;
 }
 
 .login-btn.student:hover {
-    box-shadow: 0 10px 20px rgba(30, 58, 138, 0.3);
-    opacity: 0.95;
+    background: #3b83f616;
+    color: #3b82f6;
+    border-color: #3b82f6;
 }
 
-.login-btn:nth-child(1) { animation-delay: 0.1s; }
-.login-btn:nth-child(2) { animation-delay: 0.2s; }
-.login-btn:nth-child(3) { animation-delay: 0.3s; }
+.login-btn.student:hover i {
+    color: #3b82f6;
+}
+
+.login-btn:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.login-btn:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.login-btn:nth-child(3) {
+    animation-delay: 0.3s;
+}
 
 .back-home {
     margin-top: 30px;
@@ -202,6 +240,7 @@ p {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);

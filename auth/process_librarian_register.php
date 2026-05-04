@@ -31,6 +31,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: ../public/librarianRegister.php");
         exit();
     }
+    //check user string length
+    if (strlen($firstname) < 3 || strlen($lastname) < 3) {
+        $_SESSION['error'] = "All fields must be at least 3 characters long.";
+        header("Location: ../public/librarianRegister.php");
+        exit();
+    }
+
+    if (strlen($username) < 2) {
+        $_SESSION['error'] = "Username must be at least 2 characters long.";
+        header("Location: ../public/librarianRegister.php");
+        exit();
+    }
 
     // Password matching
     if ($password !== $confirmPassword) {
@@ -55,10 +67,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         // Check if username or email already exists
-        $stmt = $pdo->prepare("SELECT user_id FROM users WHERE username = ? OR email = ?");
-        $stmt->execute([$username, $email]);
+        $stmt = $pdo->prepare("SELECT user_id FROM users WHERE username = ?");
+        $stmt->execute([$username]);
         if ($stmt->fetch()) {
-            $_SESSION['error'] = "Username or Email already exists.";
+            $_SESSION['error'] = "Username already exists.";
             header("Location: ../public/librarianRegister.php");
             exit();
         }

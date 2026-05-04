@@ -12,25 +12,44 @@ body {
     justify-content: center;
     background: linear-gradient(135deg, #1E3A8A 0%, #172554 100%);
     padding: 20px;
+    background-image: url('../../img/librarian-bg.png');
+
+}
+
+.background-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.4) 0%, rgba(120, 53, 15, 0.7) 100%);
+    z-index: 1;
+
 }
 
 .register-container {
-    background: white;
-    padding: 50px 40px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 30px 40px;
     border-radius: 16px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
     text-align: center;
     max-width: 900px;
     width: 50%;
+    position: relative;
+    z-index: 2;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    animation: fadeInUp 0.8s ease-out;
 }
 
 .logo {
-    margin-bottom: 25px;
+    margin-bottom: 15px;
 }
 
 .logo i {
     font-size: 50px;
-    color: #1E3A8A;
+    color: #D97706;
 }
 
 h1 {
@@ -41,7 +60,7 @@ h1 {
 
 p {
     color: #374151;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     font-size: 14px;
 }
 
@@ -55,7 +74,7 @@ p {
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     text-align: left;
 }
 
@@ -81,8 +100,8 @@ p {
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
-    border-color: #1E3A8A;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    border-color: #D97706;
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
 }
 
 .form-group select {
@@ -93,7 +112,7 @@ p {
 .register-btn {
     width: 100%;
     padding: 15px;
-    background: linear-gradient(135deg, #1E3A8A, #172554);
+    background: linear-gradient(135deg, #D97706, #78350F);
     color: white;
     border: none;
     border-radius: 10px;
@@ -121,14 +140,14 @@ p {
 }
 
 .login-link a {
-    color: #1E3A8A;
+    color: #D97706;
     text-decoration: none;
     font-weight: 600;
     transition: color 0.3s ease;
 }
 
 .login-link a:hover {
-    color: #172554;
+    color: #78350F;
 }
 
 .back-home {
@@ -149,7 +168,18 @@ p {
 }
 
 .back-home a:hover {
-    color: #1E3A8A;
+    color: #D97706;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .error-message {

@@ -30,10 +30,20 @@ CREATE TABLE users (
     civil_status ENUM('Single', 'Married', 'Divorced', 'Widowed') NOT NULL,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    role ENUM('Librarian', 'Student',
+    role ENUM('Librarian', 'Student', 'Admin') NOT NULL,
     approval_status ENUM('Pending', 'Approved', 'Rejected') NOT NULL DEFAULT 'Pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 3.1 OTP Table (Persistent storage for OTP codes)
+CREATE TABLE IF NOT EXISTS otp (
+    otp_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    otp_code VARCHAR(6) NOT NULL,
+    otp_expiration DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
 
 -- 4. Books Table (2NF: All non-key fields depend on book_id; 3NF: category_id reference)
 CREATE TABLE books (
