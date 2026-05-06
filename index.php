@@ -1,3 +1,22 @@
+<?php
+include 'database/db_connection.php';
+
+// Fetch settings from database
+$stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings");
+$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$settings = [];
+foreach ($results as $row) {
+    $settings[$row['setting_key']] = $row['setting_value'];
+}
+
+// Helper to safely get setting
+function getSetting($key, $default = '') {
+    global $settings;
+    return $settings[$key] ?? $default;
+}
+
+$library_name = getSetting('library_name', 'LibroTech');
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -16,7 +35,7 @@
         <div class="nav-container">
             <div class="logo">
                 <img src="img/techbook.png" alt="LibroTech Logo">
-                <span>LibroTech</span>
+                <span><?php echo htmlspecialchars($library_name); ?></span>
             </div>
 
             <ul class="nav-menu">
@@ -44,7 +63,7 @@
         </div>
         <div class="hero-overlay"></div>
         <div class="hero-content">
-            <h1 class="hero-title">Welcome to <span class="highlight">LibroTech</span></h1>
+            <h1 class="hero-title">Welcome to <span class="highlight"><?php echo htmlspecialchars($library_name); ?></span></h1>
             <p class="hero-subtitle">Your Modern Library Management Solution</p>
             <p class="hero-description">
                 Streamline your library operations with our comprehensive management system.
@@ -195,21 +214,21 @@
                             <i class="fas fa-map-marker-alt"></i>
                             <div>
                                 <h4>Address</h4>
-                                <p>123 Library Street, Book City, BC 12345</p>
+                                <p><?php echo htmlspecialchars(getSetting('library_address', '123 Library Street, Book City, BC 12345')); ?></p>
                             </div>
                         </div>
                         <div class="contact-item">
                             <i class="fas fa-phone"></i>
                             <div>
                                 <h4>Phone</h4>
-                                <p>+1 (555) 123-4567</p>
+                                <p><?php echo htmlspecialchars(getSetting('library_phone', '+1 (555) 123-4567')); ?></p>
                             </div>
                         </div>
                         <div class="contact-item">
                             <i class="fas fa-envelope"></i>
                             <div>
                                 <h4>Email</h4>
-                                <p>support@librotech.com</p>
+                                <p><?php echo htmlspecialchars(getSetting('library_email', 'support@librotech.com')); ?></p>
                             </div>
                         </div>
                         <div class="contact-item">
@@ -253,7 +272,7 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
-                    <h3><i class="fas fa-book-reader"></i> LibroTech</h3>
+                    <h3><i class="fas fa-book-reader"></i> <?php echo htmlspecialchars($library_name); ?></h3>
                     <p>Modern library management for the digital age.</p>
                 </div>
                 <div class="footer-section">
@@ -274,7 +293,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2026 LibroTech. All rights reserved.</p>
+                <p>&copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars($library_name); ?>. All rights reserved.</p>
             </div>
         </div>
     </footer>

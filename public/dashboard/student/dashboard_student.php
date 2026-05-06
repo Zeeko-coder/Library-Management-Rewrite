@@ -30,23 +30,23 @@ session_start();
                 <i class="fas fa-th-large"></i>
                 <span>My Dashboard</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="sidebar/search_catalog.php" class="menu-item">
                 <i class="fas fa-search"></i>
                 <span>Search Catalog</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="sidebar/my_barrowed.php" class="menu-item">
                 <i class="fas fa-book-reader"></i>
                 <span>My Borrowed</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="sidebar/saved_books.php" class="menu-item">
                 <i class="fas fa-bookmark"></i>
                 <span>Saved Books</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="sidebar/notification.php" class="menu-item">
                 <i class="fas fa-bell"></i>
                 <span>Notifications</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="sidebar/my_profile.php" class="menu-item">
                 <i class="fas fa-user-circle"></i>
                 <span>My Profile</span>
             </a>
@@ -73,9 +73,9 @@ session_start();
                     <span class="user-role">Undergraduate</span>
                 </div>
                 <div class="user-avatar">
-                    <?php 
-                        $initials = isset($_SESSION['username']) ? strtoupper(substr($_SESSION['username'], 0, 2)) : 'ST';
-                        echo $initials;
+                    <?php
+                    $initials = isset($_SESSION['username']) ? strtoupper(substr($_SESSION['username'], 0, 2)) : 'ST';
+                    echo $initials;
                     ?>
                 </div>
             </div>

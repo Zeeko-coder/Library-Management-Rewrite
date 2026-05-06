@@ -2,7 +2,8 @@
 @import 'dashboard.css';
 
 :root {
-    --primary-color: #D97706; /* Amber/Gold */
+    --primary-color: #D97706;
+    /* Amber/Gold */
     --primary-dark: #78350F;
     --primary-light: #F59E0B;
     --accent-gold: #FCD34D;
@@ -13,7 +14,8 @@
     background: var(--primary-dark);
 }
 
-.menu-item:hover, .menu-item.active {
+.menu-item:hover,
+.menu-item.active {
     border-left: 4px solid var(--accent-gold);
 }
 
@@ -21,10 +23,25 @@
     background: var(--primary-color);
 }
 
-.icon-books { background: rgba(217, 119, 6, 0.1); color: var(--primary-color); }
-.icon-users { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-.icon-borrow { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-.icon-overdue { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.icon-books {
+    background: rgba(217, 119, 6, 0.1);
+    color: var(--primary-color);
+}
+
+.icon-users {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.icon-borrow {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.icon-overdue {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
 
 .view-all {
     color: var(--primary-color);

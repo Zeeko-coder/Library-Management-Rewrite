@@ -44,6 +44,12 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
             exit();
         }
 
+        if ($user['approval_status'] === 'Inactive') {
+            $_SESSION['error'] = "Your account is currently inactive. Please contact the administrator.";
+            header("Location: ../public/librarianLogin.php");
+            exit();
+        }
+
         // 2. Generate OTP
         $otpCode = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
         $expiry = date("Y-m-d H:i:s", time() + OTP_EXPIRY_SECONDS);

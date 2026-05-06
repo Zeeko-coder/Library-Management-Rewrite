@@ -1,9 +1,99 @@
 <?php
 session_start();
+date_default_timezone_set('Asia/Manila');
+require_once '../../../database/db_connection.php';
+require_once '../../../helpers/cryptography_process.php';
+
 // if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Admin') {
 //     header("Location: ../../../public/loginAs.php");
 //     exit();
 // }
+
+// Stats counts
+try {
+    $total_books = $pdo->query("SELECT COUNT(book_id) FROM books")->fetchColumn() ?: 0;
+} catch (PDOException $e) {
+    $total_books = 0; // Table might not exist yet
+}
+
+try {
+    $registered_users = $pdo->query("SELECT COUNT(*) FROM users WHERE approval_status = 'Approved'")->fetchColumn() ?: 0;
+} catch (PDOException $e) {
+    $registered_users = 0;
+}
+
+try {
+    // Try common transaction table names
+    $transactions = $pdo->query("SELECT COUNT(*) FROM borrowing_records")->fetchColumn() ?: 0;
+} catch (PDOException $e) {
+    try {
+        $transactions = $pdo->query("SELECT COUNT(*) FROM borrowings")->fetchColumn() ?: 0;
+    } catch (PDOException $e2) {
+        $transactions = 0;
+    }
+}
+
+try {
+    $overdue_books = $pdo->query("SELECT COUNT(*) FROM borrowing_records WHERE status = 'Overdue'")->fetchColumn() ?: 0;
+} catch (PDOException $e) {
+    try {
+        $overdue_books = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE status = 'Overdue'")->fetchColumn() ?: 0;
+    } catch (PDOException $e2) {
+        $overdue_books = 0;
+    }
+}
+
+// Pending Approvals
+$pending_stmt = $pdo->query("SELECT * FROM users WHERE approval_status = 'Pending' ORDER BY created_at DESC LIMIT 5");
+$pending_users = $pending_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// System-wide Activity (Combined Users and Books)
+try {
+    $activity_query = "
+        (SELECT 
+            created_at, 
+            'user_registration' as type, 
+            first_name, 
+            last_name, 
+            NULL as title, 
+            NULL as category,
+            NULL as admin_name,
+            NULL as admin_role
+        FROM users)
+        UNION ALL
+        (SELECT 
+            b.created_at, 
+            'book_addition' as type, 
+            u.first_name, 
+            u.last_name, 
+            b.title, 
+            b.category,
+            u.username as admin_name,
+            u.role as admin_role
+        FROM books b
+        LEFT JOIN users u ON b.added_by = u.user_id)
+        ORDER BY created_at DESC 
+        LIMIT 10
+    ";
+    $activity_stmt = $pdo->query($activity_query);
+    $recent_activities = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $recent_activities = [];
+}
+
+function getTimeAgo($timestamp)
+{
+    $time = strtotime($timestamp);
+    $diff = time() - $time;
+
+    if ($diff < 0) return "Just now"; // Handle future timestamps
+    if ($diff < 60) return "Just now";
+    if ($diff < 3600) return round($diff / 60) . " mins ago";
+    if ($diff < 86400) return round($diff / 3600) . " hours ago";
+    if ($diff < 2592000) return round($diff / 86400) . " days ago";
+    return date("M d, Y", $time);
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -20,8 +110,9 @@ session_start();
         /* Admin specific overrides if needed */
         :root {
             --primary-color: #1E3A8A;
-            /* Deep Blue for Admin */
+            /* Deep Blue for Admin 
             --primary-dark: #1e1b4b;
+            */
         }
     </style>
 </head>
@@ -54,10 +145,6 @@ session_start();
                 <i class="fas fa-chart-line"></i>
                 <span>Reports & Analytics</span>
             </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-user-shield"></i>
-                <span>System Security</span>
-            </a>
             <a href="sidebar/system_settings.php" class="menu-item">
                 <i class="fas fa-cog"></i>
                 <span>Settings</span>
@@ -75,11 +162,7 @@ session_start();
     <main class="main-content">
         <!-- Top Header -->
         <header class="top-header animate-fade">
-            <div class="header-search">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search for system records, users, or books...">
-            </div>
-            <div class="header-user">
+            <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name"><?php echo $_SESSION['username'] ?? 'System Admin'; ?></span>
                     <span class="user-role">Administrator</span>
@@ -104,8 +187,8 @@ session_start();
             <div class="stats-grid">
                 <div class="stat-card animate-up delay-2">
                     <div class="stat-details">
-                        <h3>Total Inventory</h3>
-                        <span class="number">12,482</span>
+                        <h3>Total Books</h3>
+                        <span class="number"><?php echo number_format($total_books); ?></span>
                     </div>
                     <div class="stat-icon icon-books">
                         <i class="fas fa-book"></i>
@@ -114,7 +197,7 @@ session_start();
                 <div class="stat-card animate-up delay-3">
                     <div class="stat-details">
                         <h3>Registered Users</h3>
-                        <span class="number">3,254</span>
+                        <span class="number"><?php echo number_format($registered_users); ?></span>
                     </div>
                     <div class="stat-icon icon-users">
                         <i class="fas fa-users"></i>
@@ -123,7 +206,7 @@ session_start();
                 <div class="stat-card animate-up delay-4">
                     <div class="stat-details">
                         <h3>Transactions</h3>
-                        <span class="number">1,148</span>
+                        <span class="number"><?php echo number_format($transactions); ?></span>
                     </div>
                     <div class="stat-icon icon-borrow">
                         <i class="fas fa-exchange-alt"></i>
@@ -132,7 +215,7 @@ session_start();
                 <div class="stat-card animate-up delay-5">
                     <div class="stat-details">
                         <h3>Overdue Books</h3>
-                        <span class="number">24</span>
+                        <span class="number"><?php echo number_format($overdue_books); ?></span>
                     </div>
                     <div class="stat-icon icon-overdue">
                         <i class="fas fa-exclamation-circle"></i>
@@ -149,36 +232,44 @@ session_start();
                         <a href="#" class="view-all">View Audit Logs</a>
                     </div>
                     <div class="activity-list">
-                        <div class="activity-item">
-                            <div class="activity-img">
-                                <i class="fas fa-plus" style="color: #10b981;"></i>
-                            </div>
-                            <div class="activity-info">
-                                <span class="activity-title">New Book Added</span>
-                                <span class="activity-desc">"Advanced PHP" added by <strong>Librarian A</strong></span>
-                            </div>
-                            <div class="activity-time">5 mins ago</div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-img">
-                                <i class="fas fa-user-plus" style="color: #3b82f6;"></i>
-                            </div>
-                            <div class="activity-info">
-                                <span class="activity-title">New Student Registered</span>
-                                <span class="activity-desc"><strong>Jane Doe</strong> completed registration</span>
-                            </div>
-                            <div class="activity-time">15 mins ago</div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-img">
-                                <i class="fas fa-trash" style="color: #ef4444;"></i>
-                            </div>
-                            <div class="activity-info">
-                                <span class="activity-title">Record Deleted</span>
-                                <span class="activity-desc">Expired membership for <strong>John Smith</strong></span>
-                            </div>
-                            <div class="activity-time">1 hour ago</div>
-                        </div>
+                        <?php if (empty($recent_activities)): ?>
+                            <div class="activity-item">No recent activity.</div>
+                        <?php else: ?>
+                            <?php foreach ($recent_activities as $activity): ?>
+                                <div class="activity-item">
+                                    <?php if ($activity['type'] === 'user_registration'):
+                                        $name = decryptionData($activity['first_name']) . " " . decryptionData($activity['last_name']);
+                                    ?>
+                                        <div class="activity-img">
+                                            <i class="fas fa-user-plus" style="color: #3b82f6;"></i>
+                                        </div>
+                                        <div class="activity-info">
+                                            <span class="activity-title">New User Registered</span>
+                                            <span class="activity-desc"><strong><?php echo $name; ?></strong> completed registration</span>
+                                        </div>
+                                     <?php else:
+                                        if ($activity['admin_role'] === 'Librarian') {
+                                            $admin_display = decryptionData($activity['first_name']) . " " . decryptionData($activity['last_name']);
+                                        } else {
+                                            $admin_display = $activity['admin_role'] ?: 'Administrator';
+                                        }
+                                    ?>
+                                        <div class="activity-img">
+                                            <i class="fas fa-book-medical" style="color: #10b981;"></i>
+                                        </div>
+                                        <div class="activity-info">
+                                            <span class="activity-title">New Book Added</span>
+                                            <span class="activity-desc">
+                                                <strong><?php echo $admin_display; ?></strong> added new book
+                                                (title: <?php echo htmlspecialchars($activity['title']); ?>),
+                                                (category: <?php echo htmlspecialchars($activity['category']); ?>)
+                                            </span>
+                                        </div>
+                                    <?php endif; ?>
+                                    <div class="activity-time"><?php echo getTimeAgo($activity['created_at']); ?></div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -189,22 +280,25 @@ session_start();
                         <a href="#" class="view-all">Manage All</a>
                     </div>
                     <div class="activity-list">
-                        <div class="activity-item">
-                            <div class="user-avatar" style="background: #f59e0b;">AL</div>
-                            <div class="activity-info">
-                                <span class="activity-title">Alice Johnson</span>
-                                <span class="activity-desc">Role: Librarian</span>
-                            </div>
-                            <span class="badge badge-pending">Pending</span>
-                        </div>
-                        <div class="activity-item">
-                            <div class="user-avatar" style="background: #f59e0b;">SM</div>
-                            <div class="activity-info">
-                                <span class="activity-title">Sam Miller</span>
-                                <span class="activity-desc">Role: Student</span>
-                            </div>
-                            <span class="badge badge-pending">Pending</span>
-                        </div>
+                        <?php if (empty($pending_users)): ?>
+                            <div class="activity-item">No pending approvals.</div>
+                        <?php else: ?>
+                            <?php foreach ($pending_users as $user):
+                                $fname = decryptionData($user['first_name']);
+                                $lname = decryptionData($user['last_name']);
+                                $initials = strtoupper(substr($fname, 0, 1) . substr($lname, 0, 1));
+                                $role = $user['role'] ?? $user['userRole'] ?? 'Student';
+                            ?>
+                                <div class="activity-item">
+                                    <div class="user-avatar" style="background: #f59e0b;"><?php echo $initials; ?></div>
+                                    <div class="activity-info">
+                                        <span class="activity-title"><?php echo $fname . " " . $lname; ?></span>
+                                        <span class="activity-desc">Role: <?php echo $role; ?></span>
+                                    </div>
+                                    <span class="badge badge-pending">Pending</span>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

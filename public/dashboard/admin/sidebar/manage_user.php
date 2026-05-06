@@ -1,10 +1,126 @@
 <?php
 session_start();
+
+require_once '../../../../database/db_connection.php';
+require_once '../../../../helpers/cryptography_process.php';
+require_once '../../../../config/smtp_config.php';
+require_once '../../../../vendor/autoload.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 // Authentication check
 // if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Admin') {
 //     header("Location: ../../../../public/loginAs.php");
 //     exit();
 // }
+
+$success_msg = "";
+$error_msg = "";
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['action'])) {
+        $user_id = $_POST['user_id'];
+        $action = $_POST['action'];
+
+        if ($action === 'delete') {
+            try {
+                $delete_query = "DELETE FROM users WHERE user_id = ?";
+                $delete_stmt = $pdo->prepare($delete_query);
+                $delete_stmt->execute([$user_id]);
+                $success_msg = "User account deleted successfully.";
+            } catch (PDOException $e) {
+                $error_msg = "Failed to delete user: " . $e->getMessage();
+            }
+        } else {
+            // Fetch user data for email
+            $user_query = "SELECT * FROM users WHERE user_id = ?";
+            $user_stmt = $pdo->prepare($user_query);
+            $user_stmt->execute([$user_id]);
+            $target_user = $user_stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($target_user) {
+                $user_email = decryptionData($target_user['email']);
+                $user_name = decryptionData($target_user['username']);
+                $first_name = decryptionData($target_user['first_name']);
+                $last_name = decryptionData($target_user['last_name']);
+
+                $mail = new PHPMailer(true);
+                try {
+                    $mail->isSMTP();
+                    $mail->Host       = SMTP_HOST;
+                    $mail->SMTPAuth   = true;
+                    $mail->Username   = SMTP_USER;
+                    $mail->Password   = SMTP_PASS;
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port       = SMTP_PORT;
+
+                    $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
+                    $mail->addAddress($user_email, $first_name . " " . $last_name);
+
+                    $mail->isHTML(true);
+
+                    if ($action === 'approve') {
+                        $new_role = $_POST['role'] ?? 'Student';
+                        $update_query = "UPDATE users SET approval_status = 'Approved', role = ? WHERE user_id = ?";
+                        $update_stmt = $pdo->prepare($update_query);
+                        $update_stmt->execute([$new_role, $user_id]);
+
+                        $mail->Subject = 'Account Approved - LibroTech';
+                        $mail->Body    = "Hello $first_name,<br><br>Your account (User ID: <b>$user_id</b>, Username: <b>$user_name</b>) was approved by the administrator.<br>You can now login to the system.<br><br>Best regards,<br>LibroTech Administration";
+
+                        $success_msg = "User approved and notified via email.";
+                    } elseif ($action === 'reject') {
+                        $reason = $_POST['reason'] ?? 'No reason provided.';
+                        $update_query = "UPDATE users SET approval_status = 'Rejected' WHERE user_id = ?";
+                        $update_stmt = $pdo->prepare($update_query);
+                        $update_stmt->execute([$user_id]);
+
+                        $mail->Subject = 'Account Registration Update - LibroTech';
+                        $mail->Body    = "Hello $first_name,<br><br>Your account registration was rejected by the administration.<br><b>Reason:</b> $reason<br><br>Best regards,<br>LibroTech Administration";
+
+                        $success_msg = "User rejected and notified via email.";
+                    } elseif ($action === 'deactivate') {
+                        $reason = $_POST['reason'] ?? 'No reason provided.';
+                        $update_query = "UPDATE users SET approval_status = 'Inactive' WHERE user_id = ?";
+                        $update_stmt = $pdo->prepare($update_query);
+                        $update_stmt->execute([$user_id]);
+
+                        $mail->Subject = 'Account Deactivated - LibroTech';
+                        $mail->Body    = "Hello $first_name,<br><br>Your account (Username: <b>$user_name</b>) was deactivated by the administration.<br><b>Reason:</b> $reason<br><br>Best regards,<br>LibroTech Administration";
+
+                        $success_msg = "User deactivated and notified via email.";
+                    } elseif ($action === 'activate') {
+                        $update_query = "UPDATE users SET approval_status = 'Approved' WHERE user_id = ?";
+                        $update_stmt = $pdo->prepare($update_query);
+                        $update_stmt->execute([$user_id]);
+
+                        $mail->Subject = 'Account Reactivated - LibroTech';
+                        $mail->Body    = "Hello $first_name,<br><br>Your account (Username: <b>$user_name</b>) has been reactivated by the administration.<br>You can now login to the system again.<br><br>Best regards,<br>LibroTech Administration";
+
+                        $success_msg = "User reactivated and notified via email.";
+                    }
+                    $mail->send();
+                } catch (Exception $e) {
+                    $error_msg = "Action completed, but email failed: " . $mail->ErrorInfo;
+                }
+            } else {
+                $error_msg = "User not found.";
+            }
+        }
+    }
+}
+
+// Fetch all users
+$query = "SELECT * FROM users ORDER BY created_at DESC";
+$stmt = $pdo->prepare($query);
+$stmt->execute();
+$all_users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$pending_count = 0;
+foreach ($all_users as $u) {
+    if ($u['approval_status'] === 'Pending') $pending_count++;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -189,9 +305,39 @@ session_start();
             border: 1px solid var(--border-color);
         }
 
+        .badge-inactive {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .badge-rejected {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
         .action-btn:hover {
             transform: translateY(-2px);
             filter: brightness(0.9);
+        }
+
+        .alert {
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #bdf0cc;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #ef4444;
+            border: 1px solid #fecaca;
         }
     </style>
 </head>
@@ -223,10 +369,6 @@ session_start();
             <a href="reports&analysis.php" class="menu-item">
                 <i class="fas fa-chart-line"></i>
                 <span>Reports & Analytics</span>
-            </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-user-shield"></i>
-                <span>System Security</span>
             </a>
             <a href="system_settings.php" class="menu-item">
                 <i class="fas fa-cog"></i>
@@ -274,19 +416,25 @@ session_start();
                     </div>
                     <h1>User Management</h1>
                 </div>
-                <button class="btn btn-primary">
-                    <i class="fas fa-user-plus"></i> Add New User
-                </button>
             </div>
+
+            <?php if ($success_msg): ?>
+                <div class="alert alert-success animate-fade"><?php echo $success_msg; ?></div>
+            <?php endif; ?>
+            <?php if ($error_msg): ?>
+                <div class="alert alert-error animate-fade"><?php echo $error_msg; ?></div>
+            <?php endif; ?>
 
             <!-- Role Tabs -->
             <div class="user-tabs animate-up delay-2">
-                <button class="tab-btn active">All Users</button>
-                <button class="tab-btn">Librarians</button>
-                <button class="tab-btn">Students</button>
-                <button class="tab-btn" style="position: relative;">
+                <button class="tab-btn active" data-filter="all">All Users</button>
+                <button class="tab-btn" data-filter="Librarian">Librarians</button>
+                <button class="tab-btn" data-filter="Student">Students</button>
+                <button class="tab-btn" style="position: relative;" data-filter="Pending">
                     Pending Approvals
-                    <span style="position: absolute; top: -5px; right: -10px; background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px;">3</span>
+                    <?php if ($pending_count > 0): ?>
+                        <span style="position: absolute; top: -5px; right: -10px; background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px;"><?php echo $pending_count; ?></span>
+                    <?php endif; ?>
                 </button>
             </div>
 
@@ -302,68 +450,74 @@ session_start();
                             <th>Actions</th>
                         </tr>
                     </thead>
+
                     <tbody>
-                        <!-- Pending User Example -->
-                        <tr>
-                            <td>
-                                <div class="user-identity">
-                                    <div class="user-pfp" style="background: #f59e0b;">AL</div>
-                                    <div>
-                                        <span class="user-name">Alice Johnson</span>
-                                        <span class="user-email">alice@librotech.edu</span>
+                        <?php foreach ($all_users as $user):
+                            $fname = decryptionData($user['first_name']);
+                            $lname = decryptionData($user['last_name']);
+                            $email = decryptionData($user['email']);
+                            $role = $user['role'] ?? 'Student';
+                            $status = $user['approval_status'] ?? 'Pending';
+                            $pfp_initials = strtoupper(substr($fname, 0, 1) . substr($lname, 0, 1));
+                        ?>
+                            <tr class="user-row" data-role="<?php echo $role; ?>" data-status="<?php echo $status; ?>">
+                                <td>
+                                    <div class="user-identity">
+                                        <div class="user-pfp"><?php echo $pfp_initials; ?></div>
+                                        <div>
+                                            <span class="user-name"><?php echo $fname . " " . $lname; ?></span>
+                                            <span class="user-email"><?php echo $email; ?></span>
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
-                            <td><span class="role-pill role-librarian">Librarian</span></td>
-                            <td><span class="badge badge-pending">Pending</span></td>
-                            <td>May 04, 2026</td>
-                            <td>
-                                <div class="actions">
-                                    <a href="#" class="action-btn btn-approve"><i class="fas fa-check"></i> Approve</a>
-                                    <a href="#" class="action-btn btn-reject"><i class="fas fa-times"></i> Reject</a>
-                                </div>
-                            </td>
-                        </tr>
-                        <!-- Active Librarian Example -->
-                        <tr>
-                            <td>
-                                <div class="user-identity">
-                                    <div class="user-pfp" style="background: #fbbf24;">JS</div>
-                                    <div>
-                                        <span class="user-name">John Smith</span>
-                                        <span class="user-email">smith.j@librotech.edu</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="role-pill role-librarian">Librarian</span></td>
-                            <td><span class="badge badge-success">Active</span></td>
-                            <td>Apr 12, 2026</td>
-                            <td>
-                                <div class="actions">
-                                    <a href="#" class="action-btn btn-manage">Manage Account</a>
-                                </div>
-                            </td>
-                        </tr>
-                        <!-- Active Student Example -->
-                        <tr>
-                            <td>
-                                <div class="user-identity">
-                                    <div class="user-pfp" style="background: #3b82f6;">MD</div>
-                                    <div>
-                                        <span class="user-name">Mark Davis</span>
-                                        <span class="user-email">mark.student@librotech.edu</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="role-pill role-student">Student</span></td>
-                            <td><span class="badge badge-success">Active</span></td>
-                            <td>May 01, 2026</td>
-                            <td>
-                                <div class="actions">
-                                    <a href="#" class="action-btn btn-manage">Manage Account</a>
-                                </div>
-                            </td>
-                        </tr>
+                                </td>
+                                <td>
+                                    <?php if ($status === 'Pending'): ?>
+                                        <form method="POST" style="display: flex; gap: 5px; align-items: center;">
+                                            <input type="hidden" name="user_id" value="<?php echo $user['user_id']; ?>">
+                                            <select name="role" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 12px; font-family: inherit;">
+                                                <option value="Student" <?php echo ($role === 'Student') ? 'selected' : ''; ?>>Student</option>
+                                                <option value="Librarian" <?php echo ($role === 'Librarian') ? 'selected' : ''; ?>>Librarian</option>
+                                            </select>
+                                        <?php else: ?>
+                                            <span class="role-pill role-<?php echo strtolower($role); ?>"><?php echo $role; ?></span>
+                                        <?php endif; ?>
+                                </td>
+                                <td><span class="badge badge-<?php echo strtolower($status); ?>"><?php echo $status; ?></span></td>
+                                <td><?php echo date("M d, Y", strtotime($user['created_at'])); ?></td>
+                                <td>
+                                    <?php if ($status === 'Pending'): ?>
+                                        <div style="display: flex; gap: 8px; align-items: center;">
+                                            <input type="text" name="reason" placeholder="Reject reason..." style="font-size: 11px; padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); width: 120px;">
+                                            <div class="actions">
+                                                <button type="submit" name="action" value="approve" class="action-btn btn-approve" title="Approve"><i class="fas fa-check"></i></button>
+                                                <button type="submit" name="action" value="reject" class="action-btn btn-reject" title="Reject"><i class="fas fa-times"></i></button>
+                                            </div>
+                                        </div>
+                                        </form>
+                                    <?php else: ?>
+                                        <form method="POST" style="display: flex; gap: 8px; align-items: center;">
+                                            <input type="hidden" name="user_id" value="<?php echo $user['user_id']; ?>">
+                                            <?php if ($status === 'Approved'): ?>
+                                                <input type="text" name="reason" placeholder="Deactivation reason..." style="font-size: 11px; padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); width: 120px;">
+                                                <div class="actions">
+                                                    <button type="submit" name="action" value="deactivate" class="action-btn" style="background: #94a3b8; color: white; border-radius: 6px; padding: 5px 10px; font-size: 11px; width: auto; border: none; cursor: pointer;">Deactivate</button>
+                                                    <button type="submit" name="action" value="delete" class="action-btn" style="background: #ef4444; color: white; border-radius: 6px; padding: 5px 10px; font-size: 11px; width: auto; border: none; cursor: pointer;" onclick="return confirm('Are you sure you want to permanently delete this account?')">Delete</button>
+                                                </div>
+                                            <?php elseif ($status === 'Inactive'): ?>
+                                                <div class="actions">
+                                                    <button type="submit" name="action" value="activate" class="action-btn" style="background: var(--primary-color); color: white; border-radius: 6px; padding: 5px 10px; font-size: 11px; width: auto; border: none; cursor: pointer;">Activate</button>
+                                                    <button type="submit" name="action" value="delete" class="action-btn" style="background: #ef4444; color: white; border-radius: 6px; padding: 5px 10px; font-size: 11px; width: auto; border: none; cursor: pointer;" onclick="return confirm('Are you sure you want to permanently delete this account?')">Delete</button>
+                                                </div>
+                                            <?php elseif ($status === 'Rejected'): ?>
+                                                <div class="actions">
+                                                    <button type="submit" name="action" value="delete" class="action-btn" style="background: #ef4444; color: white; border-radius: 6px; padding: 5px 10px; font-size: 11px; width: auto; border: none; cursor: pointer;" onclick="return confirm('Are you sure you want to permanently delete this account?')">Delete Account</button>
+                                                </div>
+                                            <?php endif; ?>
+                                        </form>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
@@ -371,6 +525,32 @@ session_start();
     </main>
 
     <script src="../../../../src/js/dashboard.js"></script>
+    <script>
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const filter = btn.getAttribute('data-filter');
+                if (!filter) return; // Skip if it's the badge-only part or something
+
+                // Update active tab
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Filter rows
+                document.querySelectorAll('.user-row').forEach(row => {
+                    const role = row.getAttribute('data-role');
+                    const status = row.getAttribute('data-status');
+
+                    if (filter === 'all') {
+                        row.style.display = 'table-row';
+                    } else if (filter === 'Pending') {
+                        row.style.display = (status === 'Pending') ? 'table-row' : 'none';
+                    } else if (filter === 'Librarian' || filter === 'Student') {
+                        row.style.display = (role === filter && status === 'Approved') ? 'table-row' : 'none';
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>

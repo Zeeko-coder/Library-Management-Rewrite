@@ -1,10 +1,40 @@
 <?php
 session_start();
-// Authentication check
-// if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Admin') {
-//     header("Location: ../../../../public/loginAs.php");
-//     exit();
-// }
+require_once '../../../../database/db_connection.php';
+require_once '../../../../helpers/cryptography_process.php';
+
+try {
+    // Stats for reports
+    $total_borrows = $pdo->query("SELECT COUNT(*) FROM borrowings")->fetchColumn() ?: 0;
+    $unique_borrowers = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM borrowings")->fetchColumn() ?: 0;
+    $returned_books = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE status = 'returned'")->fetchColumn() ?: 0;
+    $overdue_count = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE status = 'borrowed' AND due_date < CURRENT_DATE")->fetchColumn() ?: 0;
+
+    // Fetch category distribution
+    $category_stmt = $pdo->query("
+        SELECT category, COUNT(*) as count 
+        FROM books bk
+        JOIN borrowings br ON bk.book_id = br.book_id
+        GROUP BY category
+        ORDER BY count DESC
+    ");
+    $category_data = $category_stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Fetch Top Books
+    $top_books_stmt = $pdo->query("
+        SELECT bk.title, bk.author, COUNT(br.id) as borrow_count 
+        FROM books bk
+        JOIN borrowings br ON bk.book_id = br.book_id
+        GROUP BY bk.book_id
+        ORDER BY borrow_count DESC
+        LIMIT 5
+    ");
+    $top_books = $top_books_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+} catch (PDOException $e) {
+    $total_borrows = $unique_borrowers = $returned_books = $overdue_count = 0;
+    $category_data = $top_books = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -144,8 +174,31 @@ session_start();
             transition: var(--transition);
         }
 
-        .btn-pdf { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; }
-        .btn-excel { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+        .btn-pdf {
+            background: #fee2e2;
+            color: #ef4444;
+            border: 1px solid #fecaca;
+        }
+
+        .btn-excel {
+            background: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+
+        @media print {
+            .sidebar, .management-header .tool-group, .report-controls {
+                display: none !important;
+            }
+            .main-content {
+                margin-left: 0 !important;
+                padding: 0 !important;
+            }
+            .data-card {
+                box-shadow: none !important;
+                border: 1px solid #eee !important;
+            }
+        }
     </style>
 </head>
 
@@ -177,10 +230,6 @@ session_start();
                 <i class="fas fa-chart-line"></i>
                 <span>Reports & Analytics</span>
             </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-user-shield"></i>
-                <span>System Security</span>
-            </a>
             <a href="system_settings.php" class="menu-item">
                 <i class="fas fa-cog"></i>
                 <span>Settings</span>
@@ -208,9 +257,9 @@ session_start();
                     <span class="user-role">Administrator</span>
                 </div>
                 <div class="user-avatar">
-                    <?php 
-                        $initials = isset($_SESSION['username']) ? strtoupper(substr($_SESSION['username'], 0, 2)) : 'AD';
-                        echo $initials;
+                    <?php
+                    $initials = isset($_SESSION['username']) ? strtoupper(substr($_SESSION['username'], 0, 2)) : 'AD';
+                    echo $initials;
                     ?>
                 </div>
             </div>
@@ -228,8 +277,8 @@ session_start();
                     <h1>Library Insights</h1>
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <div class="export-btn btn-pdf"><i class="fas fa-file-pdf"></i> PDF Report</div>
-                    <div class="export-btn btn-excel"><i class="fas fa-file-excel"></i> Excel Data</div>
+                    <div class="export-btn btn-pdf" onclick="window.print()"><i class="fas fa-file-pdf"></i> PDF Report</div>
+                    <div class="export-btn btn-excel" id="exportExcel"><i class="fas fa-file-excel"></i> Excel Data</div>
                 </div>
             </div>
 
@@ -249,7 +298,7 @@ session_start();
                 </div>
             </div>
 
-            <!-- Analytics Content -->
+            <!-- Analytics Content (Adjusted Layout) -->
             <div class="analytics-row">
                 <!-- Left: Category Distribution -->
                 <div class="data-card animate-up delay-3">
@@ -258,42 +307,28 @@ session_start();
                         <i class="fas fa-info-circle" style="color: var(--text-lighter);"></i>
                     </div>
                     <div style="padding: 10px 0;">
-                        <div class="progress-stat-item">
-                            <div class="progress-stat-info">
-                                <span>Computer Science & Technology</span>
-                                <span>42% (5,242 Borrows)</span>
+                        <?php if (empty($category_data)): ?>
+                            <p style="text-align: center; color: var(--text-lighter); padding: 20px;">No borrowing data available yet.</p>
+                        <?php else: ?>
+                            <?php 
+                            $colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
+                            $i = 0;
+                            foreach ($category_data as $cat): 
+                                $percentage = ($total_borrows > 0) ? round(($cat['count'] / $total_borrows) * 100) : 0;
+                                $color = $colors[$i % count($colors)];
+                                $i++;
+                            ?>
+                            <div class="progress-stat-item">
+                                <div class="progress-stat-info">
+                                    <span><?php echo htmlspecialchars($cat['category']); ?></span>
+                                    <span><?php echo $percentage; ?>% (<?php echo $cat['count']; ?> Borrows)</span>
+                                </div>
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" style="width: <?php echo $percentage; ?>%; background: <?php echo $color; ?>;"></div>
+                                </div>
                             </div>
-                            <div class="progress-bar-bg">
-                                <div class="progress-bar-fill" style="width: 42%; background: #3b82f6;"></div>
-                            </div>
-                        </div>
-                        <div class="progress-stat-item">
-                            <div class="progress-stat-info">
-                                <span>Literature & Fiction</span>
-                                <span>28% (3,495 Borrows)</span>
-                            </div>
-                            <div class="progress-bar-bg">
-                                <div class="progress-bar-fill" style="width: 28%; background: #10b981;"></div>
-                            </div>
-                        </div>
-                        <div class="progress-stat-item">
-                            <div class="progress-stat-info">
-                                <span>Mathematics & Engineering</span>
-                                <span>18% (2,246 Borrows)</span>
-                            </div>
-                            <div class="progress-bar-bg">
-                                <div class="progress-bar-fill" style="width: 18%; background: #f59e0b;"></div>
-                            </div>
-                        </div>
-                        <div class="progress-stat-item">
-                            <div class="progress-stat-info">
-                                <span>Others</span>
-                                <span>12% (1,499 Borrows)</span>
-                            </div>
-                            <div class="progress-bar-bg">
-                                <div class="progress-bar-fill" style="width: 12%; background: #94a3b8;"></div>
-                            </div>
-                        </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -303,59 +338,19 @@ session_start();
                         <h2>Top Rated Titles</h2>
                     </div>
                     <div class="ranking-list">
-                        <div class="ranking-item">
-                            <div class="rank-number">1</div>
-                            <div class="rank-details">
-                                <h5>Clean Code</h5>
-                                <span>856 Borrows this month</span>
+                        <?php if (empty($top_books)): ?>
+                            <p style="text-align: center; color: var(--text-lighter); padding: 20px;">No books borrowed yet.</p>
+                        <?php else: ?>
+                            <?php $rank = 1; foreach ($top_books as $book): ?>
+                            <div class="ranking-item">
+                                <div class="rank-number" <?php echo $rank > 3 ? 'style="background: #e2e8f0; color: #64748b;"' : ''; ?>><?php echo $rank++; ?></div>
+                                <div class="rank-details">
+                                    <h5><?php echo htmlspecialchars($book['title']); ?></h5>
+                                    <span><?php echo $book['borrow_count']; ?> Total Borrows</span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="ranking-item">
-                            <div class="rank-number">2</div>
-                            <div class="rank-details">
-                                <h5>Modern PHP 8</h5>
-                                <span>642 Borrows this month</span>
-                            </div>
-                        </div>
-                        <div class="ranking-item">
-                            <div class="rank-number">3</div>
-                            <div class="rank-details">
-                                <h5>Design Patterns</h5>
-                                <span>512 Borrows this month</span>
-                            </div>
-                        </div>
-                        <div class="ranking-item">
-                            <div class="rank-number" style="background: #e2e8f0; color: #64748b;">4</div>
-                            <div class="rank-details">
-                                <h5>Algorithms v4</h5>
-                                <span>489 Borrows this month</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bottom Row: Summary Metrics -->
-            <div class="stats-grid animate-up delay-5">
-                <div class="stat-card" style="padding: 20px;">
-                    <div class="stat-details">
-                        <h3 style="font-size: 12px;">Borrowing Velocity</h3>
-                        <span class="number" style="font-size: 20px;">14.2 Books/Day</span>
-                        <span style="font-size: 11px; color: #10b981;"><i class="fas fa-caret-up"></i> 5.2% vs Last Month</span>
-                    </div>
-                </div>
-                <div class="stat-card" style="padding: 20px;">
-                    <div class="stat-details">
-                        <h3 style="font-size: 12px;">Unique Borrowers</h3>
-                        <span class="number" style="font-size: 20px;">842 Students</span>
-                        <span style="font-size: 11px; color: #10b981;"><i class="fas fa-caret-up"></i> 12.8% active rate</span>
-                    </div>
-                </div>
-                <div class="stat-card" style="padding: 20px;">
-                    <div class="stat-details">
-                        <h3 style="font-size: 12px;">Inventory Turnover</h3>
-                        <span class="number" style="font-size: 20px;">0.85 Rate</span>
-                        <span style="font-size: 11px; color: #3b82f6;">Optimal Performance</span>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -363,6 +358,45 @@ session_start();
     </main>
 
     <script src="../../../../src/js/dashboard.js"></script>
+    <script>
+        document.getElementById('exportExcel').addEventListener('click', function() {
+            // CSV Content Preparation
+            const rows = [
+                ["LIBROTECH LIBRARY MANAGEMENT SYSTEM - ANALYTICS REPORT"],
+                ["Generated on", "<?php echo date('Y-m-d H:i'); ?>"],
+                [],
+                ["CATEGORY DISTRIBUTION"],
+                ["Category", "Borrow Count", "Percentage"]
+            ];
+
+            <?php foreach ($category_data as $cat): 
+                $percentage = ($total_borrows > 0) ? round(($cat['count'] / $total_borrows) * 100) : 0;
+            ?>
+                rows.push(["<?php echo addslashes($cat['category']); ?>", "<?php echo $cat['count']; ?>", "<?php echo $percentage; ?>%"]);
+            <?php endforeach; ?>
+
+            rows.push([], ["TOP RANKED BOOKS"], ["Rank", "Title", "Borrow Count"]);
+            <?php $rank = 1; foreach ($top_books as $book): ?>
+                rows.push(["<?php echo $rank++; ?>", "<?php echo addslashes($book['title']); ?>", "<?php echo $book['borrow_count']; ?>"]);
+            <?php endforeach; ?>
+
+            // Create CSV string
+            let csvContent = "data:text/csv;charset=utf-8,";
+            rows.forEach(function(rowArray) {
+                let row = rowArray.map(value => `"${value}"`).join(",");
+                csvContent += row + "\r\n";
+            });
+
+            // Trigger Download
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "LibroTech_Analytics_<?php echo date('Y-m-d'); ?>.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    </script>
 </body>
 
 </html>

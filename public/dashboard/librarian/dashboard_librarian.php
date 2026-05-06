@@ -1,12 +1,82 @@
 <?php
 session_start();
-require_once '../../../config/smtp_config.php';
+require_once '../../../database/db_connection.php';
 require_once '../../../helpers/cryptography_process.php';
 
 // if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Librarian') {
 //     header("Location: ../../../auth/login.php");
 //     exit();
 // }
+
+// Stats counts
+try {
+    $total_books = $pdo->query("SELECT COUNT(book_id) FROM books")->fetchColumn() ?: 0;
+} catch (PDOException $e) {
+    $total_books = 0;
+}
+
+try {
+    $active_borrows = $pdo->query("SELECT COUNT(*) FROM borrowing_records WHERE status = 'Borrowed'")->fetchColumn() ?: 0;
+} catch (PDOException $e) {
+    $active_borrows = 0;
+}
+
+try {
+    $due_today = $pdo->query("SELECT COUNT(*) FROM borrowing_records WHERE due_date = CURRENT_DATE AND status = 'Borrowed'")->fetchColumn() ?: 0;
+} catch (PDOException $e) {
+    $due_today = 0;
+}
+
+try {
+    $overdue_books = $pdo->query("SELECT COUNT(*) FROM borrowing_records WHERE status = 'Overdue'")->fetchColumn() ?: 0;
+} catch (PDOException $e) {
+    $overdue_books = 0;
+}
+
+// Recent Circulation Records
+try {
+    $recent_stmt = $pdo->query("
+        SELECT br.*, b.title, u.first_name, u.last_name 
+        FROM borrowing_records br
+        JOIN books b ON br.book_id = b.book_id
+        JOIN users u ON br.user_id = u.user_id
+        ORDER BY br.borrow_date DESC, br.record_id DESC
+        LIMIT 5
+    ");
+    $recent_circulation = $recent_stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $recent_circulation = [];
+}
+
+// Overdue Reminders
+try {
+    $overdue_stmt = $pdo->query("
+        SELECT br.*, b.title, u.first_name, u.last_name 
+        FROM borrowing_records br
+        JOIN books b ON br.book_id = b.book_id
+        JOIN users u ON br.user_id = u.user_id
+        WHERE br.status = 'Overdue'
+        ORDER BY br.due_date ASC
+        LIMIT 5
+    ");
+    $overdue_reminders = $overdue_stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $overdue_reminders = [];
+}
+
+function getTimeAgo($timestamp)
+{
+    $time = strtotime($timestamp);
+    if (!$time) return "N/A";
+    $diff = time() - $time;
+
+    if ($diff < 0) return "Just now";
+    if ($diff < 60) return "Just now";
+    if ($diff < 3600) return round($diff / 60) . " mins ago";
+    if ($diff < 86400) return round($diff / 3600) . " hours ago";
+    if ($diff < 2592000) return round($diff / 86400) . " days ago";
+    return date("M d, Y", $time);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -33,23 +103,23 @@ require_once '../../../helpers/cryptography_process.php';
                 <i class="fas fa-th-large"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="sidebar/book_cataloging.php" class="menu-item">
                 <i class="fas fa-book"></i>
                 <span>Book Cataloging</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="sidebar/circulation.php" class="menu-item">
                 <i class="fas fa-exchange-alt"></i>
                 <span>Circulation</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="sidebar/student_list.php" class="menu-item">
                 <i class="fas fa-user-graduate"></i>
-                <span>Member Management</span>
+                <span>Student List</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="sidebar/notification.php" class="menu-item">
                 <i class="fas fa-bell"></i>
                 <span>Notifications</span>
             </a>
-            <a href="#" class="menu-item">
+            <a href="sidebar/statistics.php" class="menu-item">
                 <i class="fas fa-chart-line"></i>
                 <span>Statistics</span>
             </a>
@@ -96,7 +166,7 @@ require_once '../../../helpers/cryptography_process.php';
                 <div class="stat-card animate-up delay-2">
                     <div class="stat-details">
                         <h3>Books Cataloged</h3>
-                        <span class="number">8,124</span>
+                        <span class="number"><?php echo number_format($total_books); ?></span>
                     </div>
                     <div class="stat-icon icon-books">
                         <i class="fas fa-book"></i>
@@ -105,7 +175,7 @@ require_once '../../../helpers/cryptography_process.php';
                 <div class="stat-card animate-up delay-3">
                     <div class="stat-details">
                         <h3>Active Borrows</h3>
-                        <span class="number">1,120</span>
+                        <span class="number"><?php echo number_format($active_borrows); ?></span>
                     </div>
                     <div class="stat-icon icon-borrow">
                         <i class="fas fa-exchange-alt"></i>
@@ -114,7 +184,7 @@ require_once '../../../helpers/cryptography_process.php';
                 <div class="stat-card animate-up delay-4">
                     <div class="stat-details">
                         <h3>Return Due Today</h3>
-                        <span class="number">42</span>
+                        <span class="number"><?php echo number_format($due_today); ?></span>
                     </div>
                     <div class="stat-icon icon-users">
                         <i class="fas fa-clock"></i>
@@ -123,7 +193,7 @@ require_once '../../../helpers/cryptography_process.php';
                 <div class="stat-card animate-up delay-5">
                     <div class="stat-details">
                         <h3>Overdue Books</h3>
-                        <span class="number">18</span>
+                        <span class="number"><?php echo number_format($overdue_books); ?></span>
                     </div>
                     <div class="stat-icon icon-overdue">
                         <i class="fas fa-exclamation-triangle"></i>
@@ -140,36 +210,29 @@ require_once '../../../helpers/cryptography_process.php';
                         <a href="#" class="view-all">View All History</a>
                     </div>
                     <div class="activity-list">
-                        <div class="activity-item">
-                            <div class="activity-img">
-                                <i class="fas fa-arrow-up" style="color: #10b981;"></i>
-                            </div>
-                            <div class="activity-info">
-                                <span class="activity-title">Return: Data Structures</span>
-                                <span class="activity-desc">Returned by <strong>Student A</strong></span>
-                            </div>
-                            <div class="activity-time">Just now</div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-img">
-                                <i class="fas fa-arrow-down" style="color: #f59e0b;"></i>
-                            </div>
-                            <div class="activity-info">
-                                <span class="activity-title">Borrow: Python Basics</span>
-                                <span class="activity-desc">Borrowed by <strong>Student B</strong></span>
-                            </div>
-                            <div class="activity-time">10 mins ago</div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-img">
-                                <i class="fas fa-arrow-down" style="color: #f59e0b;"></i>
-                            </div>
-                            <div class="activity-info">
-                                <span class="activity-title">Borrow: Modern PHP</span>
-                                <span class="activity-desc">Borrowed by <strong>Student C</strong></span>
-                            </div>
-                            <div class="activity-time">1 hour ago</div>
-                        </div>
+                        <?php if (empty($recent_circulation)): ?>
+                            <div class="activity-item">No recent circulation records.</div>
+                        <?php else: ?>
+                            <?php foreach ($recent_circulation as $record):
+                                $is_return = !is_null($record['return_date']);
+                                $student_name = decryptionData($record['first_name']) . " " . decryptionData($record['last_name']);
+                            ?>
+                                <div class="activity-item">
+                                    <div class="activity-img">
+                                        <?php if ($is_return): ?>
+                                            <i class="fas fa-arrow-up" style="color: #10b981;"></i>
+                                        <?php else: ?>
+                                            <i class="fas fa-arrow-down" style="color: #f59e0b;"></i>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="activity-info">
+                                        <span class="activity-title"><?php echo $is_return ? 'Return' : 'Borrow'; ?>: <?php echo htmlspecialchars($record['title']); ?></span>
+                                        <span class="activity-desc"><?php echo $is_return ? 'Returned' : 'Borrowed'; ?> by <strong><?php echo $student_name; ?></strong></span>
+                                    </div>
+                                    <div class="activity-time"><?php echo getTimeAgo($record['borrow_date']); ?></div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -180,22 +243,27 @@ require_once '../../../helpers/cryptography_process.php';
                         <a href="#" class="view-all">Notify All</a>
                     </div>
                     <div class="activity-list">
-                        <div class="activity-item">
-                            <div class="user-avatar" style="background: #ef4444;">JD</div>
-                            <div class="activity-info">
-                                <span class="activity-title">John Doe</span>
-                                <span class="activity-desc">3 days overdue: "Algebra"</span>
-                            </div>
-                            <button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">Remind</button>
-                        </div>
-                        <div class="activity-item">
-                            <div class="user-avatar" style="background: #ef4444;">SM</div>
-                            <div class="activity-info">
-                                <span class="activity-title">Sarah Meyer</span>
-                                <span class="activity-desc">1 day overdue: "Calculus"</span>
-                            </div>
-                            <button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">Remind</button>
-                        </div>
+                        <?php if (empty($overdue_reminders)): ?>
+                            <div class="activity-item">No overdue reminders.</div>
+                        <?php else: ?>
+                            <?php foreach ($overdue_reminders as $reminder):
+                                $fname = decryptionData($reminder['first_name']);
+                                $lname = decryptionData($reminder['last_name']);
+                                $initials = strtoupper(substr($fname, 0, 1) . substr($lname, 0, 1));
+                                $due_date = new DateTime($reminder['due_date']);
+                                $today = new DateTime();
+                                $days_overdue = $today->diff($due_date)->days;
+                            ?>
+                                <div class="activity-item">
+                                    <div class="user-avatar" style="background: #ef4444;"><?php echo $initials; ?></div>
+                                    <div class="activity-info">
+                                        <span class="activity-title"><?php echo $fname . " " . $lname; ?></span>
+                                        <span class="activity-desc"><?php echo $days_overdue; ?> day(s) overdue: "<?php echo htmlspecialchars($reminder['title']); ?>"</span>
+                                    </div>
+                                    <button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">Remind</button>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
