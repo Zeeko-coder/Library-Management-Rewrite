@@ -3,10 +3,29 @@ session_start();
 require_once '../../../database/db_connection.php';
 require_once '../../../helpers/cryptography_process.php';
 
-// if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Librarian') {
-//     header("Location: ../../../auth/login.php");
-//     exit();
-// }
+// Authentication check
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Librarian') {
+    header("Location: ../../../loginAs.php");
+    exit();
+}
+
+// Get unread notification count for sidebar
+$unread_count = 0;
+try {
+    $user_stmt = $pdo->prepare("SELECT last_notif_view FROM users WHERE user_id = ?");
+    $user_stmt->execute([$_SESSION['user_id']]);
+    $last_view = $user_stmt->fetchColumn() ?: '1970-01-01 00:00:00';
+
+    $pending_stmt = $pdo->prepare("SELECT COUNT(*) FROM borrowings WHERE status = 'pending' AND created_at > ?");
+    $pending_stmt->execute([$last_view]);
+    $unread_count += $pending_stmt->fetchColumn();
+
+    $overdue_stmt = $pdo->prepare("SELECT COUNT(*) FROM borrowings WHERE (status = 'borrowed' OR status = 'overdue') AND due_date < NOW() AND due_date > ?");
+    $overdue_stmt->execute([$last_view]);
+    $unread_count += $overdue_stmt->fetchColumn();
+} catch (PDOException $e) {
+    $unread_count = 0;
+}
 
 // Stats counts
 try {
@@ -16,19 +35,19 @@ try {
 }
 
 try {
-    $active_borrows = $pdo->query("SELECT COUNT(*) FROM borrowing_records WHERE status = 'Borrowed'")->fetchColumn() ?: 0;
+    $active_borrows = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE status = 'Borrowed'")->fetchColumn() ?: 0;
 } catch (PDOException $e) {
     $active_borrows = 0;
 }
 
 try {
-    $due_today = $pdo->query("SELECT COUNT(*) FROM borrowing_records WHERE due_date = CURRENT_DATE AND status = 'Borrowed'")->fetchColumn() ?: 0;
+    $due_today = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE due_date = CURRENT_DATE AND status = 'Borrowed'")->fetchColumn() ?: 0;
 } catch (PDOException $e) {
     $due_today = 0;
 }
 
 try {
-    $overdue_books = $pdo->query("SELECT COUNT(*) FROM borrowing_records WHERE status = 'Overdue'")->fetchColumn() ?: 0;
+    $overdue_books = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE (status = 'Borrowed' OR status = 'Overdue') AND due_date < NOW() AND return_date IS NULL")->fetchColumn() ?: 0;
 } catch (PDOException $e) {
     $overdue_books = 0;
 }
@@ -37,10 +56,10 @@ try {
 try {
     $recent_stmt = $pdo->query("
         SELECT br.*, b.title, u.first_name, u.last_name 
-        FROM borrowing_records br
+        FROM borrowings br
         JOIN books b ON br.book_id = b.book_id
         JOIN users u ON br.user_id = u.user_id
-        ORDER BY br.borrow_date DESC, br.record_id DESC
+        ORDER BY br.borrow_date DESC, br.id DESC
         LIMIT 5
     ");
     $recent_circulation = $recent_stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -51,11 +70,13 @@ try {
 // Overdue Reminders
 try {
     $overdue_stmt = $pdo->query("
-        SELECT br.*, b.title, u.first_name, u.last_name 
-        FROM borrowing_records br
+        SELECT br.*, b.title, u.first_name, u.last_name, u.email
+        FROM borrowings br
         JOIN books b ON br.book_id = b.book_id
         JOIN users u ON br.user_id = u.user_id
-        WHERE br.status = 'Overdue'
+        WHERE (br.status = 'Borrowed' OR br.status = 'Overdue') 
+        AND br.due_date < NOW() 
+        AND br.return_date IS NULL
         ORDER BY br.due_date ASC
         LIMIT 5
     ");
@@ -89,6 +110,7 @@ function getTimeAgo($timestamp)
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../../../src/css/styles.css">
     <link rel="stylesheet" href="../../../src/css/librarian_dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body class="dashboard-body">
@@ -118,6 +140,9 @@ function getTimeAgo($timestamp)
             <a href="sidebar/notification.php" class="menu-item">
                 <i class="fas fa-bell"></i>
                 <span>Notifications</span>
+                <?php if ($unread_count > 0): ?>
+                    <span class="nav-badge"><?php echo $unread_count; ?></span>
+                <?php endif; ?>
             </a>
             <a href="sidebar/statistics.php" class="menu-item">
                 <i class="fas fa-chart-line"></i>
@@ -240,7 +265,7 @@ function getTimeAgo($timestamp)
                 <div class="data-card animate-up delay-6">
                     <div class="card-header">
                         <h2>Overdue Reminders</h2>
-                        <a href="#" class="view-all">Notify All</a>
+                        <a href="#" class="view-all notify-all-btn">Notify All</a>
                     </div>
                     <div class="activity-list">
                         <?php if (empty($overdue_reminders)): ?>
@@ -260,7 +285,13 @@ function getTimeAgo($timestamp)
                                         <span class="activity-title"><?php echo $fname . " " . $lname; ?></span>
                                         <span class="activity-desc"><?php echo $days_overdue; ?> day(s) overdue: "<?php echo htmlspecialchars($reminder['title']); ?>"</span>
                                     </div>
-                                    <button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">Remind</button>
+                                    <button class="btn btn-primary remind-btn"
+                                        data-record-id="<?php echo $reminder['id']; ?>"
+                                        data-student-name="<?php echo $fname . " " . $lname; ?>"
+                                        data-book-title="<?php echo htmlspecialchars($reminder['title']); ?>"
+                                        style="padding: 5px 10px; font-size: 12px;">
+                                        Remind
+                                    </button>
                                 </div>
                             <?php endforeach; ?>
                         <?php endif; ?>

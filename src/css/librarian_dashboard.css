@@ -46,3 +46,15 @@
 .view-all {
     color: var(--primary-color);
 }
+
+/* Sidebar Notification Badge */
+.nav-badge {
+    background: #ef4444;
+    color: white;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 12px;
+    margin-left: auto;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}

@@ -171,6 +171,7 @@ p {
 
 .input-error {
     border-color: #DC2626 !important;
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15) !important;
 }
 
 @media (max-width: 480px) {

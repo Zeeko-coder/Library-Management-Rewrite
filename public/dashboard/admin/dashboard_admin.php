@@ -23,25 +23,18 @@ try {
 }
 
 try {
-    // Try common transaction table names
-    $transactions = $pdo->query("SELECT COUNT(*) FROM borrowing_records")->fetchColumn() ?: 0;
+    $transactions = $pdo->query("SELECT COUNT(*) FROM borrowings")->fetchColumn() ?: 0;
 } catch (PDOException $e) {
-    try {
-        $transactions = $pdo->query("SELECT COUNT(*) FROM borrowings")->fetchColumn() ?: 0;
-    } catch (PDOException $e2) {
-        $transactions = 0;
-    }
+    $transactions = 0;
 }
 
+
 try {
-    $overdue_books = $pdo->query("SELECT COUNT(*) FROM borrowing_records WHERE status = 'Overdue'")->fetchColumn() ?: 0;
+    $overdue_books = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE status = 'Overdue'")->fetchColumn() ?: 0;
 } catch (PDOException $e) {
-    try {
-        $overdue_books = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE status = 'Overdue'")->fetchColumn() ?: 0;
-    } catch (PDOException $e2) {
-        $overdue_books = 0;
-    }
+    $overdue_books = 0;
 }
+
 
 // Pending Approvals
 $pending_stmt = $pdo->query("SELECT * FROM users WHERE approval_status = 'Pending' ORDER BY created_at DESC LIMIT 5");
@@ -247,7 +240,7 @@ function getTimeAgo($timestamp)
                                             <span class="activity-title">New User Registered</span>
                                             <span class="activity-desc"><strong><?php echo $name; ?></strong> completed registration</span>
                                         </div>
-                                     <?php else:
+                                    <?php else:
                                         if ($activity['admin_role'] === 'Librarian') {
                                             $admin_display = decryptionData($activity['first_name']) . " " . decryptionData($activity['last_name']);
                                         } else {

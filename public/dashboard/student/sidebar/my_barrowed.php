@@ -1,9 +1,97 @@
 <?php
 session_start();
-// if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Student') {
-//     header("Location: ../../../auth/login.php");
-//     exit();
-// }
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Student') {
+    header("Location: ../../../studentLogin.php");
+    exit();
+}
+
+require_once '../../../../database/db_connection.php';
+require_once '../../../../helpers/cryptography_process.php';
+
+$student_id = $_SESSION['user_id'];
+$success_message = "";
+$error_message = "";
+
+// Handle Return Action
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'return_book') {
+    $borrow_id = $_POST['borrow_id'];
+    try {
+        $stmt = $pdo->prepare("UPDATE borrowings SET status = 'returned', return_date = NOW() WHERE id = ? AND user_id = ?");
+        $stmt->execute([$borrow_id, $student_id]);
+        $success_message = "Book returned successfully!";
+    } catch (PDOException $e) {
+        $error_message = "Error returning book: " . $e->getMessage();
+    }
+}
+
+// Get unread notification count for sidebar
+$unread_count = 0;
+try {
+    $user_stmt = $pdo->prepare("SELECT last_notif_view FROM users WHERE user_id = ?");
+    $user_stmt->execute([$student_id]);
+    $last_view = $user_stmt->fetchColumn() ?: '1970-01-01 00:00:00';
+
+    $notif_stmt = $pdo->prepare("SELECT COUNT(*) FROM borrowings 
+        WHERE user_id = ? 
+        AND (
+            (status IN ('borrowed', 'Borrowed') AND borrow_date > ?) OR 
+            (status IN ('overdue', 'Overdue') AND due_date > ?) OR
+            (status = 'rejected' AND created_at > ?)
+        )");
+    $notif_stmt->execute([$student_id, $last_view, $last_view, $last_view]);
+    $unread_count = $notif_stmt->fetchColumn();
+
+    // Add manual notifications from the notifications table
+    $manual_stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
+    $manual_stmt->execute([$student_id]);
+    $unread_count += $manual_stmt->fetchColumn();
+} catch (PDOException $e) {
+    $unread_count = 0;
+}
+
+try {
+    // 1. Stats Calculation
+    // Currently Borrowed (Active, not overdue)
+    $currently_borrowed = $pdo->prepare("SELECT COUNT(*) FROM borrowings WHERE user_id = ? AND LOWER(status) = 'borrowed' AND due_date >= NOW() AND (return_date IS NULL OR return_date = '')");
+    $currently_borrowed->execute([$student_id]);
+    $borrowed_count = $currently_borrowed->fetchColumn() ?: 0;
+
+    // Overdue Items (Status is 'overdue' OR due_date has passed)
+    $overdue_items = $pdo->prepare("SELECT COUNT(*) FROM borrowings WHERE user_id = ? AND (LOWER(status) = 'overdue' OR (LOWER(status) = 'borrowed' AND due_date < NOW())) AND (return_date IS NULL OR return_date = '')");
+    $overdue_items->execute([$student_id]);
+    $overdue_count = $overdue_items->fetchColumn() ?: 0;
+
+    // Successfully Returned
+    $returned_items = $pdo->prepare("SELECT COUNT(*) FROM borrowings WHERE user_id = ? AND return_date IS NOT NULL AND return_date != ''");
+    $returned_items->execute([$student_id]);
+    $returned_count = $returned_items->fetchColumn() ?: 0;
+
+    // 2. Fetch Active Borrows
+    $active_borrows_stmt = $pdo->prepare("
+        SELECT br.*, b.title, b.author 
+        FROM borrowings br 
+        JOIN books b ON br.book_id = b.book_id 
+        WHERE br.user_id = ? AND (br.return_date IS NULL OR br.return_date = '') AND br.status NOT IN ('pending', 'rejected')
+        ORDER BY br.due_date ASC
+    ");
+    $active_borrows_stmt->execute([$student_id]);
+    $active_borrows = $active_borrows_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // 3. Fetch Recently Returned
+    $returned_loans_stmt = $pdo->prepare("
+        SELECT br.*, b.title 
+        FROM borrowings br 
+        JOIN books b ON br.book_id = b.book_id 
+        WHERE br.user_id = ? AND br.return_date IS NOT NULL AND br.return_date != ''
+        ORDER BY br.return_date DESC 
+        LIMIT 10
+    ");
+    $returned_loans_stmt->execute([$student_id]);
+    $returned_loans = $returned_loans_stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $borrowed_count = $overdue_count = $returned_count = 0;
+    $active_borrows = $returned_loans = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -132,13 +220,12 @@ session_start();
                 <i class="fas fa-book-reader"></i>
                 <span>My Borrowed</span>
             </a>
-            <a href="saved_books.php" class="menu-item">
-                <i class="fas fa-bookmark"></i>
-                <span>Saved Books</span>
-            </a>
             <a href="notification.php" class="menu-item">
                 <i class="fas fa-bell"></i>
                 <span>Notifications</span>
+                <?php if ($unread_count > 0): ?>
+                    <span class="nav-badge"><?php echo $unread_count; ?></span>
+                <?php endif; ?>
             </a>
             <a href="my_profile.php" class="menu-item">
                 <i class="fas fa-user-circle"></i>
@@ -162,72 +249,75 @@ session_start();
             </div>
             <div class="header-user">
                 <div class="user-info">
-                    <span class="user-name">Student</span>
+                    <span class="user-name"><?php echo $_SESSION['username'] ?? 'Student'; ?></span>
                     <span class="user-role">Student</span>
                 </div>
-                <div class="user-avatar">ST</div>
+                <div class="user-avatar">
+                    <?php echo isset($_SESSION['username']) ? strtoupper(substr($_SESSION['username'], 0, 2)) : 'ST'; ?>
+                </div>
             </div>
         </header>
 
         <div class="dashboard-container">
             <div class="animate-up delay-1" style="margin-bottom: 25px;">
                 <div class="breadcrumb" style="font-size: 13px; color: var(--text-muted); margin-bottom: 5px;">Student / My Borrowed</div>
-                <h1>My Reading History</h1>
+                <h1>My Borrowed History</h1>
+                <?php if ($success_message): ?>
+                    <div style="background: #ecfdf5; color: #10b981; padding: 10px 15px; border-radius: 8px; margin-top: 15px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-check-circle"></i> <?php echo $success_message; ?>
+                    </div>
+                <?php endif; ?>
+                <?php if ($error_message): ?>
+                    <div style="background: #fef2f2; color: #ef4444; padding: 10px 15px; border-radius: 8px; margin-top: 15px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-exclamation-circle"></i> <?php echo $error_message; ?>
+                    </div>
+                <?php endif; ?>
             </div>
 
-            <!-- Personal Circulation Stats -->
-            <div class="personal-stats animate-up delay-2">
-                <div class="stat-mini-card" style="border-left-color: #6366f1;">
-                    <h4>Currently Borrowed</h4>
-                    <div class="value">04 Books</div>
-                </div>
-                <div class="stat-mini-card" style="border-left-color: #ef4444;">
-                    <h4>Overdue Items</h4>
-                    <div class="value">01 Book</div>
-                </div>
-                <div class="stat-mini-card" style="border-left-color: #10b981;">
-                    <h4>Successfully Returned</h4>
-                    <div class="value">12 Books</div>
-                </div>
-                <div class="stat-mini-card" style="border-left-color: #f59e0b;">
-                    <h4>Late Fees</h4>
-                    <div class="value">₱0.00</div>
-                </div>
-            </div>
-
-            <!-- Active Loans Table -->
+            <!-- Active Borrows Table -->
             <div class="loans-container animate-up delay-3">
                 <div style="padding: 20px; border-bottom: 1px solid var(--border-light);">
-                    <h3 style="font-size: 16px;">Active Loans</h3>
+                    <h3 style="font-size: 16px;">Active Borrows</h3>
                 </div>
                 <table class="loans-table">
                     <thead>
                         <tr>
-                            <th>Book Details</th>
-                            <th>Issue Date</th>
+                            <th>Book Title</th>
+                            <th>Author</th>
+                            <th>Borrow Date</th>
                             <th>Due Date</th>
                             <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>
-                                <a href="#" class="book-link">Introduction to Algorithms</a>
-                                <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0;">ISBN: 978-0262033848</p>
-                            </td>
-                            <td>May 01, 2026</td>
-                            <td><strong>May 15, 2026</strong></td>
-                            <td><span class="status-badge active-loan"><i class="fas fa-clock"></i> 3 Days Left</span></td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <a href="#" class="book-link">Clean Architecture</a>
-                                <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0;">ISBN: 978-0134494166</p>
-                            </td>
-                            <td>Apr 10, 2026</td>
-                            <td><strong style="color: #ef4444;">Apr 24, 2026</strong></td>
-                            <td><span class="status-badge overdue-loan"><i class="fas fa-exclamation-triangle"></i> Overdue</span></td>
-                        </tr>
+                        <?php if (empty($active_borrows)): ?>
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-muted);">No active borrows found.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($active_borrows as $loan):
+                                $is_overdue = (strtolower($loan['status']) === 'overdue' || strtotime($loan['due_date']) < time());
+                                $due_time = strtotime($loan['due_date']);
+                                $diff = $due_time - time();
+                                $days_left = ceil($diff / (60 * 60 * 24));
+                            ?>
+                                <tr>
+                                    <td>
+                                        <strong><?php echo htmlspecialchars($loan['title']); ?></strong>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($loan['author']); ?></td>
+                                    <td><?php echo date('M d, Y', strtotime($loan['borrow_date'])); ?></td>
+                                    <td><strong <?php echo $is_overdue ? 'style="color: #ef4444;"' : ''; ?>><?php echo date('M d, Y', $due_time); ?></strong></td>
+                                    <td>
+                                        <?php if ($is_overdue): ?>
+                                            <span class="status-badge overdue-loan"><i class="fas fa-exclamation-triangle"></i> Overdue</span>
+                                        <?php else: ?>
+                                            <span class="status-badge active-loan"><i class="fas fa-clock"></i> <?php echo $days_left; ?> Days Left</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -246,11 +336,19 @@ session_start();
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>Modern PHP 8</td>
-                            <td>May 03, 2026</td>
-                            <td><span class="status-badge returned-loan"><i class="fas fa-check-circle"></i> Returned</span></td>
-                        </tr>
+                        <?php if (empty($returned_loans)): ?>
+                            <tr>
+                                <td colspan="3" style="text-align: center; padding: 20px; color: var(--text-muted);">No return history found.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($returned_loans as $r_loan): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($r_loan['title']); ?></td>
+                                    <td><?php echo date('M d, Y', strtotime($r_loan['return_date'])); ?></td>
+                                    <td><span class="status-badge returned-loan"><i class="fas fa-check-circle"></i> Returned</span></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>

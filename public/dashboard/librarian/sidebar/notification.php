@@ -9,6 +9,31 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Librarian') {
     exit();
 }
 
+// Update last notification view timestamp
+try {
+    $pdo->prepare("UPDATE users SET last_notif_view = NOW() WHERE user_id = ?")->execute([$_SESSION['user_id']]);
+} catch (PDOException $e) {
+    // Silently fail if update fails
+}
+
+// Get unread notification count for sidebar (will be 0 after update above)
+$unread_count = 0;
+try {
+    $user_stmt = $pdo->prepare("SELECT last_notif_view FROM users WHERE user_id = ?");
+    $user_stmt->execute([$_SESSION['user_id']]);
+    $last_view = $user_stmt->fetchColumn() ?: '1970-01-01 00:00:00';
+
+    $pending_stmt = $pdo->prepare("SELECT COUNT(*) FROM borrowings WHERE status = 'pending' AND created_at > ?");
+    $pending_stmt->execute([$last_view]);
+    $unread_count += $pending_stmt->fetchColumn();
+
+    $overdue_stmt = $pdo->prepare("SELECT COUNT(*) FROM borrowings WHERE (status = 'borrowed' OR status = 'overdue') AND due_date < NOW() AND due_date > ?");
+    $overdue_stmt->execute([$last_view]);
+    $unread_count += $overdue_stmt->fetchColumn();
+} catch (PDOException $e) {
+    $unread_count = 0;
+}
+
 // Fetch dynamic notifications from existing tables
 $alerts = [];
 
@@ -241,6 +266,9 @@ $overdue_count = count(array_filter($alerts, fn($a) => $a['type'] === 'overdue')
             <a href="notification.php" class="menu-item active">
                 <i class="fas fa-bell"></i>
                 <span>Notifications</span>
+                <?php if ($unread_count > 0): ?>
+                    <span class="nav-badge"><?php echo $unread_count; ?></span>
+                <?php endif; ?>
             </a>
             <a href="statistics.php" class="menu-item">
                 <i class="fas fa-chart-line"></i>

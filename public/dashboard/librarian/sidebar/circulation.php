@@ -4,9 +4,34 @@ date_default_timezone_set('Asia/Manila');
 require_once '../../../../database/db_connection.php';
 require_once '../../../../helpers/cryptography_process.php';
 
+// Authentication check
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Librarian') {
+    header("Location: ../../../../loginAs.php");
+    exit();
+}
+
+// Get unread notification count for sidebar
+$unread_count = 0;
+try {
+    $user_stmt = $pdo->prepare("SELECT last_notif_view FROM users WHERE user_id = ?");
+    $user_stmt->execute([$_SESSION['user_id']]);
+    $last_view = $user_stmt->fetchColumn() ?: '1970-01-01 00:00:00';
+
+    $pending_stmt = $pdo->prepare("SELECT COUNT(*) FROM borrowings WHERE status = 'pending' AND created_at > ?");
+    $pending_stmt->execute([$last_view]);
+    $unread_count += $pending_stmt->fetchColumn();
+
+    $overdue_stmt = $pdo->prepare("SELECT COUNT(*) FROM borrowings WHERE (status = 'borrowed' OR status = 'overdue') AND due_date < NOW() AND due_date > ?");
+    $overdue_stmt->execute([$last_view]);
+    $unread_count += $overdue_stmt->fetchColumn();
+} catch (PDOException $e) {
+    $unread_count = 0;
+}
+
 // Stats counts for Circulation
 try {
     $active_borrows = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE status = 'borrowed' AND return_date IS NULL")->fetchColumn() ?: 0;
+
     $due_today = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE status = 'borrowed' AND due_date = CURRENT_DATE")->fetchColumn() ?: 0;
     $overdue_books = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE status = 'borrowed' AND due_date < CURRENT_DATE")->fetchColumn() ?: 0;
     $returns_today = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE return_date = CURRENT_DATE")->fetchColumn() ?: 0;
@@ -20,75 +45,11 @@ try {
         LIMIT 10
     ");
     $recent_transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Fetch users for Issue Book dropdown
-    $users_stmt = $pdo->query("SELECT user_id, first_name, last_name, role FROM users WHERE approval_status = 'Approved'");
-    $dropdown_users = $users_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Fetch available books for Issue Book dropdown
-    $books_stmt = $pdo->query("SELECT book_id, title, available_copies FROM books WHERE available_copies > 0");
-    $dropdown_books = $books_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Fetch active borrowings for Return Book dropdown
-    $active_stmt = $pdo->query("
-        SELECT b.id, b.book_id, bk.title, u.first_name, u.last_name 
-        FROM borrowings b
-        JOIN books bk ON b.book_id = bk.book_id
-        JOIN users u ON b.user_id = u.user_id
-        WHERE b.status = 'borrowed'
-    ");
-    $active_loans = $active_stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $active_borrows = $due_today = $overdue_books = $returns_today = 0;
-    $recent_transactions = $dropdown_users = $dropdown_books = $active_loans = [];
+    $recent_transactions = [];
 }
 
-// Handle Issue Book Submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['issue_book'])) {
-    $user_id = $_POST['user_id'];
-    $book_id = $_POST['book_id'];
-    $due_date = $_POST['due_date'];
-    $borrow_date = date('Y-m-d');
-
-    try {
-        $pdo->beginTransaction();
-        $stmt = $pdo->prepare("INSERT INTO borrowings (user_id, book_id, borrow_date, due_date, status) VALUES (?, ?, ?, ?, 'borrowed')");
-        $stmt->execute([$user_id, $book_id, $borrow_date, $due_date]);
-        $stmt = $pdo->prepare("UPDATE books SET available_copies = available_copies - 1 WHERE book_id = ?");
-        $stmt->execute([$book_id]);
-        $pdo->commit();
-        $_SESSION['success_message'] = "Book issued successfully!";
-        header("Location: circulation.php");
-        exit();
-    } catch (PDOException $e) {
-        $pdo->rollBack();
-        $_SESSION['error_message'] = "Error issuing book: " . $e->getMessage();
-    }
-}
-
-// Handle Return Book Submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_return'])) {
-    $borrowing_id = $_POST['borrowing_id'];
-    $return_date = date('Y-m-d');
-
-    try {
-        $pdo->beginTransaction();
-        $stmt = $pdo->prepare("SELECT book_id FROM borrowings WHERE id = ?");
-        $stmt->execute([$borrowing_id]);
-        $book_id = $stmt->fetchColumn();
-        $stmt = $pdo->prepare("UPDATE borrowings SET return_date = ?, status = 'returned' WHERE id = ?");
-        $stmt->execute([$return_date, $borrowing_id]);
-        $stmt = $pdo->prepare("UPDATE books SET available_copies = available_copies + 1 WHERE book_id = ?");
-        $stmt->execute([$book_id]);
-        $pdo->commit();
-        $_SESSION['success_message'] = "Book returned successfully!";
-        header("Location: circulation.php");
-        exit();
-    } catch (PDOException $e) {
-        $pdo->rollBack();
-        $_SESSION['error_message'] = "Error returning book: " . $e->getMessage();
-    }
-}
 
 ?>
 <!DOCTYPE html>
@@ -421,6 +382,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_return'])) {
             <a href="notification.php" class="menu-item">
                 <i class="fas fa-bell"></i>
                 <span>Notifications</span>
+                <?php if ($unread_count > 0): ?>
+                    <span class="nav-badge"><?php echo $unread_count; ?></span>
+                <?php endif; ?>
             </a>
             <a href="statistics.php" class="menu-item">
                 <i class="fas fa-chart-line"></i>
@@ -466,14 +430,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_return'])) {
                     </div>
                     <h1>Circulation Desk</h1>
                 </div>
-                <div class="tool-group">
-                    <button class="btn btn-outline" id="openReturnModal">
-                        <i class="fas fa-undo"></i> Return Book
-                    </button>
-                    <button class="btn btn-primary" id="openIssueModal">
-                        <i class="fas fa-sign-out-alt"></i> Issue Book
-                    </button>
-                </div>
             </div>
 
             <!-- Circulation Stats (Mirrored from Admin) -->
@@ -496,7 +452,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_return'])) {
                 </div>
             </div>
 
+
+
             <!-- Transaction Table (Mirrored from Admin) -->
+
             <div class="table-container animate-up delay-3">
                 <div style="padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
                     <h3 style="font-size: 16px;">Current Transactions</h3>
@@ -514,10 +473,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_return'])) {
                         <tr>
                             <th>Book Title</th>
                             <th>Borrower</th>
-                            <th>Issue Date</th>
+                            <th>Borrow Date</th>
                             <th>Due Date</th>
                             <th>Status</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -541,23 +499,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_return'])) {
                                 <tr>
                                     <td><strong><?php echo htmlspecialchars($tx['title']); ?></strong></td>
                                     <td><?php echo $name; ?></td>
-                                    <td><?php echo date('M d, Y', strtotime($tx['borrow_date'])); ?></td>
+                                    <td><?php echo date('M d, h:i A', strtotime($tx['borrow_date'])); ?></td>
                                     <td>
-                                        <span class="due-date <?php echo $is_overdue ? 'due-danger' : ''; ?>">
-                                            <?php echo date('M d, Y', strtotime($tx['due_date'])); ?>
+                                        <span class="due-date <?php echo $is_overdue ? 'due-danger' : ''; ?>" style="font-size: 13px;">
+                                            <?php echo date('M d, Y', strtotime($tx['due_date'])); ?><br>
+                                            <small style="opacity: 0.7;"><?php echo date('h:i A', strtotime($tx['due_date'])); ?></small>
                                         </span>
                                     </td>
+
                                     <td>
                                         <div class="status-indicator status-<?php echo $status_class; ?>">
                                             <div class="indicator-dot"></div> <?php echo $status; ?>
                                         </div>
-                                    </td>
-                                    <td>
-                                        <?php if ($tx['status'] === 'borrowed'): ?>
-                                            <button class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">Return</button>
-                                        <?php else: ?>
-                                            <span style="font-size: 11px; color: var(--text-lighter);">Completed</span>
-                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -587,96 +540,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_return'])) {
         <?php endif; ?>
     </div>
 
-    <!-- Issue Book Modal -->
-    <div id="issueBookModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Issue New Book</h2>
-                <span class="close-modal">&times;</span>
-            </div>
-            <form action="circulation.php" method="POST" class="modal-form">
-                <div class="form-group">
-                    <label>Select Student / Borrower</label>
-                    <select name="user_id" required>
-                        <option value="">Choose a user...</option>
-                        <?php foreach ($dropdown_users as $user):
-                            $name = decryptionData($user['first_name']) . " " . decryptionData($user['last_name']);
-                        ?>
-                            <option value="<?php echo $user['user_id']; ?>"><?php echo $name; ?> (<?php echo $user['role']; ?>)</option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Select Book</label>
-                    <select name="book_id" required>
-                        <option value="">Choose a book...</option>
-                        <?php foreach ($dropdown_books as $book): ?>
-                            <option value="<?php echo $book['book_id']; ?>"><?php echo htmlspecialchars($book['title']); ?> (<?php echo $book['available_copies']; ?> available)</option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Due Date</label>
-                    <input type="date" name="due_date" required min="<?php echo date('Y-m-d'); ?>" value="<?php echo date('Y-m-d', strtotime('+7 days')); ?>">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary close-modal">Cancel</button>
-                    <button type="submit" name="issue_book" class="btn btn-primary" style="background: #3b82f6; border-color: #3b82f6;">Issue Book</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
-    <!-- Return Book Modal -->
-    <div id="returnBookModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Process Return</h2>
-                <span class="close-modal">&times;</span>
-            </div>
-            <form action="circulation.php" method="POST" class="modal-form">
-                <div class="form-group">
-                    <label>Select Active Loan</label>
-                    <select name="borrowing_id" required>
-                        <option value="">Choose a transaction...</option>
-                        <?php foreach ($active_loans as $loan):
-                            $name = decryptionData($loan['first_name']) . " " . decryptionData($loan['last_name']);
-                        ?>
-                            <option value="<?php echo $loan['id']; ?>"><?php echo htmlspecialchars($loan['title']); ?> - <?php echo $name; ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary close-modal">Cancel</button>
-                    <button type="submit" name="process_return" class="btn btn-primary" style="background: #3b82f6;">Complete Return</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <script src="../../../../src/js/dashboard.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const issueModal = document.getElementById('issueBookModal');
-            const returnModal = document.getElementById('returnBookModal');
-            const openIssueBtn = document.getElementById('openIssueModal');
-            const openReturnBtn = document.getElementById('openReturnModal');
             const closeBtns = document.querySelectorAll('.close-modal');
-
-            openIssueBtn.onclick = () => issueModal.style.display = 'block';
-            openReturnBtn.onclick = () => returnModal.style.display = 'block';
 
             closeBtns.forEach(btn => {
                 btn.onclick = () => {
-                    issueModal.style.display = 'none';
-                    returnModal.style.display = 'none';
+                    // Logic for any remaining modals if any
                 }
             });
-
-            window.onclick = (e) => {
-                if (e.target === issueModal) issueModal.style.display = 'none';
-                if (e.target === returnModal) returnModal.style.display = 'none';
-            }
 
             // Auto-hide alerts after 5 seconds
             const alerts = document.querySelectorAll('.alert');

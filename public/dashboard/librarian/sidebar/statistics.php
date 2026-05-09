@@ -9,6 +9,24 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Librarian') {
     exit();
 }
 
+// Get unread notification count for sidebar
+$unread_count = 0;
+try {
+    $user_stmt = $pdo->prepare("SELECT last_notif_view FROM users WHERE user_id = ?");
+    $user_stmt->execute([$_SESSION['user_id']]);
+    $last_view = $user_stmt->fetchColumn() ?: '1970-01-01 00:00:00';
+
+    $pending_stmt = $pdo->prepare("SELECT COUNT(*) FROM borrowings WHERE status = 'pending' AND created_at > ?");
+    $pending_stmt->execute([$last_view]);
+    $unread_count += $pending_stmt->fetchColumn();
+
+    $overdue_stmt = $pdo->prepare("SELECT COUNT(*) FROM borrowings WHERE (status = 'borrowed' OR status = 'overdue') AND due_date < NOW() AND due_date > ?");
+    $overdue_stmt->execute([$last_view]);
+    $unread_count += $overdue_stmt->fetchColumn();
+} catch (PDOException $e) {
+    $unread_count = 0;
+}
+
 try {
     // 1. Total Borrowing Transactions
     $total_borrows = $pdo->query("SELECT COUNT(*) FROM borrowings")->fetchColumn() ?: 0;
@@ -132,6 +150,9 @@ try {
             <a href="notification.php" class="menu-item">
                 <i class="fas fa-bell"></i>
                 <span>Notifications</span>
+                <?php if ($unread_count > 0): ?>
+                    <span class="nav-badge"><?php echo $unread_count; ?></span>
+                <?php endif; ?>
             </a>
             <a href="statistics.php" class="menu-item active">
                 <i class="fas fa-chart-line"></i>
