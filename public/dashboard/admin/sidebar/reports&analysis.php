@@ -1,40 +1,5 @@
 <?php
-session_start();
-require_once '../../../../database/db_connection.php';
-require_once '../../../../helpers/cryptography_process.php';
-
-try {
-    // Stats for reports
-    $total_borrows = $pdo->query("SELECT COUNT(*) FROM borrowings")->fetchColumn() ?: 0;
-    $unique_borrowers = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM borrowings")->fetchColumn() ?: 0;
-    $returned_books = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE status = 'returned'")->fetchColumn() ?: 0;
-    $overdue_count = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE status = 'borrowed' AND due_date < CURRENT_DATE")->fetchColumn() ?: 0;
-
-    // Fetch category distribution
-    $category_stmt = $pdo->query("
-        SELECT category, COUNT(*) as count 
-        FROM books bk
-        JOIN borrowings br ON bk.book_id = br.book_id
-        GROUP BY category
-        ORDER BY count DESC
-    ");
-    $category_data = $category_stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Fetch Top Books
-    $top_books_stmt = $pdo->query("
-        SELECT bk.title, bk.author, COUNT(br.id) as borrow_count 
-        FROM books bk
-        JOIN borrowings br ON bk.book_id = br.book_id
-        GROUP BY bk.book_id
-        ORDER BY borrow_count DESC
-        LIMIT 5
-    ");
-    $top_books = $top_books_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-} catch (PDOException $e) {
-    $total_borrows = $unique_borrowers = $returned_books = $overdue_count = 0;
-    $category_data = $top_books = [];
-}
+require_once __DIR__ . '/../backend/process_reports&analysis.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -47,162 +12,11 @@ try {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../../../../src/css/styles.css">
     <link rel="stylesheet" href="../../../../src/css/dashboard.css">
-    <style>
-        /* Specific styles for Reports page */
-        .management-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
-
-        .breadcrumb {
-            display: flex;
-            gap: 10px;
-            font-size: 14px;
-            color: var(--text-lighter);
-            margin-bottom: 5px;
-        }
-
-        .breadcrumb a {
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-
-        /* Report Controls */
-        .report-controls {
-            background: white;
-            padding: 15px 25px;
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-sm);
-            margin-bottom: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        /* Analytics Grid */
-        .analytics-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 25px;
-            margin-bottom: 25px;
-        }
-
-        /* Progress Stats */
-        .progress-stat-item {
-            margin-bottom: 20px;
-        }
-
-        .progress-stat-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .progress-bar-bg {
-            height: 10px;
-            background: #f1f5f9;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            background: var(--primary-color);
-            border-radius: 10px;
-            transition: width 1s ease-in-out;
-        }
-
-        /* Ranking List */
-        .ranking-list {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .ranking-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 10px;
-            border-radius: 8px;
-            transition: var(--transition);
-        }
-
-        .ranking-item:hover {
-            background: #f8fafc;
-        }
-
-        .rank-number {
-            width: 24px;
-            height: 24px;
-            background: var(--primary-light);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .rank-details h5 {
-            font-size: 14px;
-            color: var(--text-dark);
-            margin: 0;
-        }
-
-        .rank-details span {
-            font-size: 12px;
-            color: var(--text-lighter);
-        }
-
-        .export-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .btn-pdf {
-            background: #fee2e2;
-            color: #ef4444;
-            border: 1px solid #fecaca;
-        }
-
-        .btn-excel {
-            background: #dcfce7;
-            color: #16a34a;
-            border: 1px solid #bbf7d0;
-        }
-
-        @media print {
-            .sidebar, .management-header .tool-group, .report-controls {
-                display: none !important;
-            }
-            .main-content {
-                margin-left: 0 !important;
-                padding: 0 !important;
-            }
-            .data-card {
-                box-shadow: none !important;
-                border: 1px solid #eee !important;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="../src/css/reports&analysis.css">
 </head>
 
 <body class="dashboard-body">
+
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -310,23 +124,23 @@ try {
                         <?php if (empty($category_data)): ?>
                             <p style="text-align: center; color: var(--text-lighter); padding: 20px;">No borrowing data available yet.</p>
                         <?php else: ?>
-                            <?php 
+                            <?php
                             $colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
                             $i = 0;
-                            foreach ($category_data as $cat): 
+                            foreach ($category_data as $cat):
                                 $percentage = ($total_borrows > 0) ? round(($cat['count'] / $total_borrows) * 100) : 0;
                                 $color = $colors[$i % count($colors)];
                                 $i++;
                             ?>
-                            <div class="progress-stat-item">
-                                <div class="progress-stat-info">
-                                    <span><?php echo htmlspecialchars($cat['category']); ?></span>
-                                    <span><?php echo $percentage; ?>% (<?php echo $cat['count']; ?> Borrows)</span>
+                                <div class="progress-stat-item">
+                                    <div class="progress-stat-info">
+                                        <span><?php echo htmlspecialchars($cat['category']); ?></span>
+                                        <span><?php echo $percentage; ?>% (<?php echo $cat['count']; ?> Borrows)</span>
+                                    </div>
+                                    <div class="progress-bar-bg">
+                                        <div class="progress-bar-fill" style="width: <?php echo $percentage; ?>%; background: <?php echo $color; ?>;"></div>
+                                    </div>
                                 </div>
-                                <div class="progress-bar-bg">
-                                    <div class="progress-bar-fill" style="width: <?php echo $percentage; ?>%; background: <?php echo $color; ?>;"></div>
-                                </div>
-                            </div>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
@@ -341,14 +155,15 @@ try {
                         <?php if (empty($top_books)): ?>
                             <p style="text-align: center; color: var(--text-lighter); padding: 20px;">No books borrowed yet.</p>
                         <?php else: ?>
-                            <?php $rank = 1; foreach ($top_books as $book): ?>
-                            <div class="ranking-item">
-                                <div class="rank-number" <?php echo $rank > 3 ? 'style="background: #e2e8f0; color: #64748b;"' : ''; ?>><?php echo $rank++; ?></div>
-                                <div class="rank-details">
-                                    <h5><?php echo htmlspecialchars($book['title']); ?></h5>
-                                    <span><?php echo $book['borrow_count']; ?> Total Borrows</span>
+                            <?php $rank = 1;
+                            foreach ($top_books as $book): ?>
+                                <div class="ranking-item">
+                                    <div class="rank-number" <?php echo $rank > 3 ? 'style="background: #e2e8f0; color: #64748b;"' : ''; ?>><?php echo $rank++; ?></div>
+                                    <div class="rank-details">
+                                        <h5><?php echo htmlspecialchars($book['title']); ?></h5>
+                                        <span><?php echo $book['borrow_count']; ?> Total Borrows</span>
+                                    </div>
                                 </div>
-                            </div>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
@@ -359,44 +174,15 @@ try {
 
     <script src="../../../../src/js/dashboard.js"></script>
     <script>
-        document.getElementById('exportExcel').addEventListener('click', function() {
-            // CSV Content Preparation
-            const rows = [
-                ["LIBROTECH LIBRARY MANAGEMENT SYSTEM - ANALYTICS REPORT"],
-                ["Generated on", "<?php echo date('Y-m-d H:i'); ?>"],
-                [],
-                ["CATEGORY DISTRIBUTION"],
-                ["Category", "Borrow Count", "Percentage"]
-            ];
-
-            <?php foreach ($category_data as $cat): 
-                $percentage = ($total_borrows > 0) ? round(($cat['count'] / $total_borrows) * 100) : 0;
-            ?>
-                rows.push(["<?php echo addslashes($cat['category']); ?>", "<?php echo $cat['count']; ?>", "<?php echo $percentage; ?>%"]);
-            <?php endforeach; ?>
-
-            rows.push([], ["TOP RANKED BOOKS"], ["Rank", "Title", "Borrow Count"]);
-            <?php $rank = 1; foreach ($top_books as $book): ?>
-                rows.push(["<?php echo $rank++; ?>", "<?php echo addslashes($book['title']); ?>", "<?php echo $book['borrow_count']; ?>"]);
-            <?php endforeach; ?>
-
-            // Create CSV string
-            let csvContent = "data:text/csv;charset=utf-8,";
-            rows.forEach(function(rowArray) {
-                let row = rowArray.map(value => `"${value}"`).join(",");
-                csvContent += row + "\r\n";
-            });
-
-            // Trigger Download
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "LibroTech_Analytics_<?php echo date('Y-m-d'); ?>.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        });
+        const categoryData = <?php echo json_encode($category_data); ?>;
+        const topBooks = <?php echo json_encode($top_books); ?>;
+        const totalBorrows = <?php echo (int)$total_borrows; ?>;
+        const reportDate = "<?php echo date('Y-m-d H:i'); ?>";
+        const reportFileNameDate = "<?php echo date('Y-m-d'); ?>";
     </script>
+    <script src="../../../../src/js/dashboard.js"></script>
+    <script src="../src/js/reports&analysis.js"></script>
 </body>
+</html>
 
 </html>

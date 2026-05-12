@@ -129,10 +129,6 @@ function getTimeAgo($timestamp)
                 <i class="fas fa-book"></i>
                 <span>Book Cataloging</span>
             </a>
-            <a href="sidebar/circulation.php" class="menu-item">
-                <i class="fas fa-exchange-alt"></i>
-                <span>Circulation</span>
-            </a>
             <a href="sidebar/student_list.php" class="menu-item">
                 <i class="fas fa-user-graduate"></i>
                 <span>Student List</span>
@@ -144,15 +140,11 @@ function getTimeAgo($timestamp)
                     <span class="nav-badge"><?php echo $unread_count; ?></span>
                 <?php endif; ?>
             </a>
-            <a href="sidebar/statistics.php" class="menu-item">
-                <i class="fas fa-chart-line"></i>
-                <span>Statistics</span>
-            </a>
         </nav>
         <div class="sidebar-footer">
             <a href="../../../auth/logout.php" class="menu-item">
                 <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
+                <span>Sign Out</span>
             </a>
         </div>
     </aside>

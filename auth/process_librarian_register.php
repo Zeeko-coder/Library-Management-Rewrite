@@ -32,12 +32,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
     //check user string length
-    if (strlen($firstname) < 3 || strlen($lastname) < 3) {
+    if (!preg_match("^[A-Za-z\s'-]{3,50}$", $firstname) || !preg_match("^[A-Za-z\s'-]{3,50}$", $lastname)) {
         $_SESSION['error'] = "All fields must be at least 3 characters long.";
         header("Location: ../public/librarianRegister.php");
         exit();
     }
-
     if (strlen($username) < 2) {
         $_SESSION['error'] = "Username must be at least 2 characters long.";
         header("Location: ../public/librarianRegister.php");
@@ -58,9 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    // Password strength check (optional but recommended)
-    if (strlen($password) < 8) {
-        $_SESSION['error'] = "Password must be at least 8 characters long.";
+    // Password strength check (At least 8 characters and one special character)
+    if (!preg_match("/^(?=.*[!@#$%^&*]).{8,}$/", $password)) {
+        $_SESSION['error'] = "Password must be at least 8 characters long and contain at least one special character (!@#$%^&*).";
         header("Location: ../public/librarianRegister.php");
         exit();
     }

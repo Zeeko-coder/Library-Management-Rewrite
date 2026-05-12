@@ -1,11 +1,5 @@
 <?php
 
-/**
- * Process Student Registration
- * This file handles the registration of new students.
- * It validates input, hashes the password, and stores the data in the database.
- */
-
 session_start();
 require_once '../database/db_connection.php';
 require_once '../helpers/cryptography_process.php';
@@ -32,6 +26,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
+    //check user string length
+    if (!preg_match("^[A-Za-z\s'-]{3,50}$", $firstname) || !preg_match("^[A-Za-z\s'-]{3,50}$", $lastname)) {
+        $_SESSION['error'] = "All fields must be at least 3 characters long.";
+        header("Location: ../public/studentRegister.php");
+        exit();
+    }
+
     // Password matching
     if ($password !== $confirmPassword) {
         $_SESSION['error'] = "Passwords do not match.";
@@ -46,9 +47,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    // Password strength check (optional but recommended)
-    if (strlen($password) < 8) {
-        $_SESSION['error'] = "Password must be at least 8 characters long.";
+    // Password strength check (At least 8 characters and one special character)
+    if (!preg_match("/^(?=.*[!@#$%^&*]).{8,}$/", $password)) {
+        $_SESSION['error'] = "Password must be at least 8 characters long and contain at least one special character (!@#$%^&*).";
         header("Location: ../public/studentRegister.php");
         exit();
     }

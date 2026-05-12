@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => '__root__',
-        'pretty_version' => 'dev-main',
-        'version' => 'dev-main',
-        'reference' => 'bb0b9f9e17790161fa2c94ea27e902ea0457b829',
+        'pretty_version' => 'dev-master',
+        'version' => 'dev-master',
+        'reference' => '2e476d21b535e237bcc8737480d55ee86cf51b34',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         '__root__' => array(
-            'pretty_version' => 'dev-main',
-            'version' => 'dev-main',
-            'reference' => 'bb0b9f9e17790161fa2c94ea27e902ea0457b829',
+            'pretty_version' => 'dev-master',
+            'version' => 'dev-master',
+            'reference' => '2e476d21b535e237bcc8737480d55ee86cf51b34',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -186,6 +186,15 @@
             'reference' => '63afe740e99a13ba87ec199bb07bbdee937a5b62',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/deprecation-contracts',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'twilio/sdk' => array(
+            'pretty_version' => '8.11.6',
+            'version' => '8.11.6.0',
+            'reference' => '57754efb0998086007ec9a63874fd85def5afb7f',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../twilio/sdk',
             'aliases' => array(),
             'dev_requirement' => false,
         ),

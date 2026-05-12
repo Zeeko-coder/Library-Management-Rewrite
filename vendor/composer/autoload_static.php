@@ -26,6 +26,10 @@ class ComposerStaticInit2185d2f99bcd56787481d9357a5972d3
             'Vonage\\NexmoBridge\\' => 19,
             'Vonage\\' => 7,
         ),
+        'T' =>
+        array (
+            'Twilio\\' => 7,
+        ),
         'S' =>
         array (
             'StellaMaris\\Clock\\' => 18,
@@ -51,10 +55,6 @@ class ComposerStaticInit2185d2f99bcd56787481d9357a5972d3
             'GuzzleHttp\\Promise\\' => 19,
             'GuzzleHttp\\' => 11,
         ),
-        'A' =>
-        array (
-            'App\\' => 4,
-        ),
     );
 
     public static $prefixDirsPsr4 = array (
@@ -65,6 +65,10 @@ class ComposerStaticInit2185d2f99bcd56787481d9357a5972d3
         'Vonage\\' =>
         array (
             0 => __DIR__ . '/..' . '/vonage/client-core/src',
+        ),
+        'Twilio\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/twilio/sdk/src/Twilio',
         ),
         'StellaMaris\\Clock\\' =>
         array (
@@ -118,10 +122,6 @@ class ComposerStaticInit2185d2f99bcd56787481d9357a5972d3
         'GuzzleHttp\\' =>
         array (
             0 => __DIR__ . '/..' . '/guzzlehttp/guzzle/src',
-        ),
-        'App\\' =>
-        array (
-            0 => __DIR__ . '/../..' . '/app',
         ),
     );
 

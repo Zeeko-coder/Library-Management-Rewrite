@@ -1,75 +1,5 @@
 <?php
-session_start();
-require_once '../../../../database/db_connection.php';
-
-// Fetch books from database
-$search = $_GET['search'] ?? '';
-try {
-    if (!empty($search)) {
-        $stmt = $pdo->prepare("SELECT * FROM books WHERE title LIKE ? OR author LIKE ? OR category LIKE ? ORDER BY book_id ASC");
-        $stmt->execute(["%$search%", "%$search%", "%$search%"]);
-        $all_books = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } else {
-        $books_stmt = $pdo->query("SELECT * FROM books ORDER BY book_id ASC");
-        $all_books = $books_stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-} catch (PDOException $e) {
-    $all_books = [];
-}
-
-// Handle Delete Book
-if (isset($_GET['delete_id'])) {
-    $book_id = $_GET['delete_id'];
-    try {
-        $stmt = $pdo->prepare("DELETE FROM books WHERE book_id = ?");
-        $stmt->execute([$book_id]);
-        $_SESSION['success_message'] = "Book deleted successfully!";
-        header("Location: manage_books.php");
-        exit();
-    } catch (PDOException $e) {
-        $_SESSION['error_message'] = "Error deleting book: " . $e->getMessage();
-    }
-}
-
-// Handle Add Book Submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_book'])) {
-    $title = $_POST['title'];
-    $author = $_POST['author'];
-    $category = $_POST['category'];
-    $available_copies = (int)$_POST['available_copies'];
-    $status = $_POST['status'];
-    $added_by = $_SESSION['user_id'] ?? 0; // Use session user_id
-
-    try {
-        $stmt = $pdo->prepare("INSERT INTO books (title, author, category, available_copies, status, added_by) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $author, $category, $available_copies, $status, $added_by]);
-        $_SESSION['success_message'] = "Book added successfully!";
-        header("Location: manage_books.php");
-        exit();
-    } catch (PDOException $e) {
-        $_SESSION['error_message'] = "Error adding book: " . $e->getMessage();
-    }
-}
-
-// Handle Edit Book Submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_book'])) {
-    $book_id = $_POST['book_id'];
-    $title = $_POST['title'];
-    $author = $_POST['author'];
-    $category = $_POST['category'];
-    $available_copies = (int)$_POST['available_copies'];
-    $status = $_POST['status'];
-
-    try {
-        $stmt = $pdo->prepare("UPDATE books SET title = ?, author = ?, category = ?, available_copies = ?, status = ? WHERE book_id = ?");
-        $stmt->execute([$title, $author, $category, $available_copies, $status, $book_id]);
-        $_SESSION['success_message'] = "Book updated successfully!";
-        header("Location: manage_books.php");
-        exit();
-    } catch (PDOException $e) {
-        $_SESSION['error_message'] = "Error updating book: " . $e->getMessage();
-    }
-}
+require_once __DIR__ . '/../backend/process_manage_books.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -82,288 +12,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_book'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../../../../src/css/styles.css">
     <link rel="stylesheet" href="../../../../src/css/dashboard.css">
-    <style>
-        /* Specific styles for Manage Books page */
-        .management-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
-
-        .breadcrumb {
-            display: flex;
-            gap: 10px;
-            font-size: 14px;
-            color: var(--text-lighter);
-            margin-bottom: 5px;
-        }
-
-        .breadcrumb a {
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-
-        .filter-bar {
-            background: white;
-            padding: 20px;
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-sm);
-            margin-bottom: 25px;
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .filter-group label {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-lighter);
-            text-transform: uppercase;
-        }
-
-        .filter-group select,
-        .filter-group input {
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            outline: none;
-            min-width: 150px;
-        }
-
-        .books-table-container {
-            background: white;
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-md);
-            overflow: hidden;
-        }
-
-        .books-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-        }
-
-        .books-table th {
-            background: #f8fafc;
-            padding: 15px 20px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-lighter);
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .books-table td {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 14px;
-        }
-
-        .book-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .book-cover-mini {
-            width: 40px;
-            height: 55px;
-            background: #e2e8f0;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #94a3b8;
-        }
-
-        .book-title {
-            display: block;
-            font-weight: 600;
-            color: var(--text-dark);
-        }
-
-        .book-isbn {
-            display: block;
-            font-size: 12px;
-            color: var(--text-lighter);
-        }
-
-        .actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .action-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            transition: var(--transition);
-        }
-
-        .btn-edit {
-            background: rgba(59, 130, 246, 0.1);
-            color: #3b82f6;
-        }
-
-        .btn-delete {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-        }
-
-        .btn-view {
-            background: rgba(16, 185, 129, 0.1);
-            color: #10b981;
-        }
-
-        .action-btn:hover {
-            transform: translateY(-2px);
-            filter: brightness(0.9);
-        }
-
-        /* Alert Styles */
-        .alert {
-            padding: 15px 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 14px;
-            font-weight: 500;
-            animation: fadeInDown 0.4s ease;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        }
-
-        .alert-success {
-            background-color: #f0fdf4;
-            color: #15803d;
-            border: 1px solid #bbf7d0;
-        }
-
-        .alert-danger {
-            background-color: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-
-        @keyframes fadeInDown {
-            from { transform: translateY(-10px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-content {
-            background-color: white;
-            margin: 5% auto;
-            padding: 0;
-            border-radius: var(--border-radius-lg);
-            width: 500px;
-            box-shadow: var(--shadow-lg);
-            overflow: hidden;
-            animation: modalSlideDown 0.3s ease-out;
-        }
-
-        @keyframes modalSlideDown {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .modal-header {
-            padding: 20px 25px;
-            background: #f8fafc;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h2 {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-dark);
-        }
-
-        .close-modal {
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--text-lighter);
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-
-        .close-modal:hover {
-            color: var(--danger-color);
-        }
-
-        .modal-form {
-            padding: 25px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .form-group label {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-dark);
-        }
-
-        .form-group input, .form-group select {
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .form-group input:focus, .form-group select:focus {
-            border-color: var(--primary-color);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .modal-footer {
-            margin-top: 10px;
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
-        }
-    </style>
+    <link rel="stylesheet" href="../src/css/manage_books.css">
 </head>
 
 <body class="dashboard-body">
+
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -456,15 +109,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_book'])) {
             <!-- Messages -->
             <?php if (isset($_SESSION['success_message'])): ?>
                 <div class="alert alert-success animate-up">
-                    <i class="fas fa-check-circle"></i> 
-                    <?php echo $_SESSION['success_message']; unset($_SESSION['success_message']); ?>
+                    <i class="fas fa-check-circle"></i>
+                    <?php echo $_SESSION['success_message'];
+                    unset($_SESSION['success_message']); ?>
                 </div>
             <?php endif; ?>
 
             <?php if (isset($_SESSION['error_message'])): ?>
                 <div class="alert alert-danger animate-up">
-                    <i class="fas fa-exclamation-circle"></i> 
-                    <?php echo $_SESSION['error_message']; unset($_SESSION['error_message']); ?>
+                    <i class="fas fa-exclamation-circle"></i>
+                    <?php echo $_SESSION['error_message'];
+                    unset($_SESSION['error_message']); ?>
                 </div>
             <?php endif; ?>
 
@@ -490,53 +145,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_book'])) {
                                 </td>
                             </tr>
                         <?php else: ?>
-                            <?php foreach ($all_books as $book): 
+                            <?php foreach ($all_books as $book):
                                 $status = $book['status'] ?? 'Available';
                                 $badge_class = strtolower(str_replace(' ', '-', $status));
                             ?>
-                            <tr>
-                                <td>
-                                    <div class="book-info">
-                                        <div class="book-cover-mini"><i class="fas fa-book"></i></div>
-                                        <div>
-                                            <span class="book-title"><?php echo htmlspecialchars($book['title']); ?></span>
-                                            <span class="book-isbn">ID: <?php echo $book['book_id']; ?></span>
+                                <tr>
+                                    <td>
+                                        <div class="book-info">
+                                            <div class="book-cover-mini"><i class="fas fa-book"></i></div>
+                                            <div>
+                                                <span class="book-title"><?php echo htmlspecialchars($book['title']); ?></span>
+                                                <span class="book-isbn">ID: <?php echo $book['book_id']; ?></span>
+                                            </div>
                                         </div>
-                                    </div>
-                                </td>
-                                <td><?php echo htmlspecialchars($book['author']); ?></td>
-                                <td><?php echo htmlspecialchars($book['category']); ?></td>
-                                <td><span style="font-weight: 600; color: var(--primary-color);"><?php echo $book['available_copies']; ?></span></td>
-                                <td><span class="badge badge-<?php echo $badge_class; ?>"><?php echo $status; ?></span></td>
-                                <td>
-                                    <div class="actions">
-                                        <a href="#" class="action-btn btn-view" title="View Details" 
-                                           data-id="<?php echo $book['book_id']; ?>"
-                                           data-title="<?php echo htmlspecialchars($book['title']); ?>"
-                                           data-author="<?php echo htmlspecialchars($book['author']); ?>"
-                                           data-category="<?php echo htmlspecialchars($book['category']); ?>"
-                                           data-copies="<?php echo $book['available_copies']; ?>"
-                                           data-status="<?php echo $book['status']; ?>"
-                                           data-date="<?php echo date('M d, Y', strtotime($book['created_at'])); ?>">
-                                           <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="#" class="action-btn btn-edit" title="Edit Book"
-                                           data-id="<?php echo $book['book_id']; ?>"
-                                           data-title="<?php echo htmlspecialchars($book['title']); ?>"
-                                           data-author="<?php echo htmlspecialchars($book['author']); ?>"
-                                           data-category="<?php echo htmlspecialchars($book['category']); ?>"
-                                           data-copies="<?php echo $book['available_copies']; ?>"
-                                           data-status="<?php echo $book['status']; ?>">
-                                           <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a href="#" class="action-btn btn-delete" title="Delete Book"
-                                           data-id="<?php echo $book['book_id']; ?>"
-                                           data-title="<?php echo htmlspecialchars($book['title']); ?>">
-                                           <i class="fas fa-trash"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($book['author']); ?></td>
+                                    <td><?php echo htmlspecialchars($book['category']); ?></td>
+                                    <td><span style="font-weight: 600; color: var(--primary-color);"><?php echo $book['available_copies']; ?></span></td>
+                                    <td><span class="badge badge-<?php echo $badge_class; ?>"><?php echo $status; ?></span></td>
+                                    <td>
+                                        <div class="actions">
+                                            <a href="#" class="action-btn btn-view" title="View Details"
+                                                data-id="<?php echo $book['book_id']; ?>"
+                                                data-title="<?php echo htmlspecialchars($book['title']); ?>"
+                                                data-author="<?php echo htmlspecialchars($book['author']); ?>"
+                                                data-category="<?php echo htmlspecialchars($book['category']); ?>"
+                                                data-copies="<?php echo $book['available_copies']; ?>"
+                                                data-status="<?php echo $book['status']; ?>"
+                                                data-date="<?php echo date('M d, Y', strtotime($book['created_at'])); ?>">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="#" class="action-btn btn-edit" title="Edit Book"
+                                                data-id="<?php echo $book['book_id']; ?>"
+                                                data-title="<?php echo htmlspecialchars($book['title']); ?>"
+                                                data-author="<?php echo htmlspecialchars($book['author']); ?>"
+                                                data-category="<?php echo htmlspecialchars($book['category']); ?>"
+                                                data-copies="<?php echo $book['available_copies']; ?>"
+                                                data-status="<?php echo $book['status']; ?>">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="#" class="action-btn btn-delete" title="Delete Book"
+                                                data-id="<?php echo $book['book_id']; ?>"
+                                                data-title="<?php echo htmlspecialchars($book['title']); ?>">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </tbody>
@@ -579,7 +234,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_book'])) {
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary close-modal">Cancel</button>
                     <button type="submit" name="add_book" class="btn btn-primary">Save Book</button>
                 </div>
             </form>
@@ -624,7 +278,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_book'])) {
                 </div>
             </div>
             <div class="modal-footer" style="padding: 20px 25px;">
-                <button type="button" class="btn btn-secondary close-modal">Close</button>
             </div>
         </div>
     </div>
@@ -665,99 +318,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_book'])) {
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary close-modal">Cancel</button>
                     <button type="submit" name="update_book" class="btn btn-primary">Update Book</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteBookModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div class="modal-header" style="justify-content: center; position: relative;">
+                <h2 style="margin: 0; font-size: 1.2rem;">Confirm Delete</h2>
+                <span class="close-modal" style="position: absolute; right: 20px; cursor: pointer;">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 30px;">
+                <div style="font-size: 50px; color: #ef4444; margin-bottom: 20px;">
+                    <i class="fas fa-trash-alt"></i>
+                </div>
+                <p style="font-size: 1rem; color: var(--text-dark); line-height: 1.5;">Are you sure you want to permanently delete <br><strong id="deleteBookTitle" style="color: #ef4444;"></strong>?</p>
+                <p style="font-size: 13px; color: var(--text-muted); margin-top: 15px;">
+                    <i class="fas fa-exclamation-triangle"></i> This action cannot be undone.
+                </p>
+            </div>
+            <form action="manage_books.php" method="POST">
+                <input type="hidden" name="book_id" id="deleteBookId">
+                <div class="modal-footer" style="justify-content: center; gap: 12px; background: white; border-top: none; padding: 0 30px 35px;">
+                    <button type="submit" name="delete_book" class="btn btn-primary" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;">Yes, Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="../../../../src/js/dashboard.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Modals
-            const addModal = document.getElementById('addBookModal');
-            const viewModal = document.getElementById('viewBookModal');
-            const editModal = document.getElementById('editBookModal');
-            
-            // Buttons
-            const openAddBtn = document.getElementById('openAddModal');
-            const viewBtns = document.querySelectorAll('.btn-view');
-            const editBtns = document.querySelectorAll('.btn-edit');
-            const deleteBtns = document.querySelectorAll('.btn-delete');
-            const closeBtns = document.querySelectorAll('.close-modal');
-
-            // Open Add Modal
-            openAddBtn.addEventListener('click', () => {
-                addModal.style.display = 'block';
-            });
-
-            // Delete Confirmation
-            deleteBtns.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const bookId = btn.dataset.id;
-                    const bookTitle = btn.dataset.title;
-                    if (confirm(`Are you sure you want to delete "${bookTitle}"? This action cannot be undone.`)) {
-                        window.location.href = `manage_books.php?delete_id=${bookId}`;
-                    }
-                });
-            });
-
-            // Open View Modal with Data
-            viewBtns.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const data = btn.dataset;
-                    
-                    document.getElementById('viewTitle').textContent = data.title;
-                    document.getElementById('viewAuthor').textContent = 'By ' + data.author;
-                    document.getElementById('viewID').textContent = '#' + data.id;
-                    document.getElementById('viewCategory').textContent = data.category;
-                    document.getElementById('viewCopies').textContent = data.copies;
-                    document.getElementById('viewDate').textContent = data.date;
-                    
-                    const statusBadge = document.getElementById('viewStatus');
-                    statusBadge.textContent = data.status;
-                    statusBadge.className = 'badge badge-' + data.status.toLowerCase().replace(' ', '-');
-                    
-                    viewModal.style.display = 'block';
-                });
-            });
-
-            // Open Edit Modal with Data
-            editBtns.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const data = btn.dataset;
-                    
-                    document.getElementById('editBookID').value = data.id;
-                    document.getElementById('editTitle').value = data.title;
-                    document.getElementById('editAuthor').value = data.author;
-                    document.getElementById('editCategory').value = data.category;
-                    document.getElementById('editCopies').value = data.copies;
-                    document.getElementById('editStatus').value = data.status;
-                    
-                    editModal.style.display = 'block';
-                });
-            });
-
-            // Close Modals
-            closeBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    addModal.style.display = 'none';
-                    viewModal.style.display = 'none';
-                    editModal.style.display = 'none';
-                });
-            });
-
-            window.addEventListener('click', (e) => {
-                if (e.target === addModal) addModal.style.display = 'none';
-                if (e.target === viewModal) viewModal.style.display = 'none';
-                if (e.target === editModal) editModal.style.display = 'none';
-            });
-        });
-    </script>
+    <script src="../src/js/manage_books.js"></script>
 </body>
-
-</html>
+</html>

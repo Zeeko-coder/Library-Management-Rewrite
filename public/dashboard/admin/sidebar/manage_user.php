@@ -1,126 +1,5 @@
 <?php
-session_start();
-
-require_once '../../../../database/db_connection.php';
-require_once '../../../../helpers/cryptography_process.php';
-require_once '../../../../config/smtp_config.php';
-require_once '../../../../vendor/autoload.php';
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
-// Authentication check
-// if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Admin') {
-//     header("Location: ../../../../public/loginAs.php");
-//     exit();
-// }
-
-$success_msg = "";
-$error_msg = "";
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['action'])) {
-        $user_id = $_POST['user_id'];
-        $action = $_POST['action'];
-
-        if ($action === 'delete') {
-            try {
-                $delete_query = "DELETE FROM users WHERE user_id = ?";
-                $delete_stmt = $pdo->prepare($delete_query);
-                $delete_stmt->execute([$user_id]);
-                $success_msg = "User account deleted successfully.";
-            } catch (PDOException $e) {
-                $error_msg = "Failed to delete user: " . $e->getMessage();
-            }
-        } else {
-            // Fetch user data for email
-            $user_query = "SELECT * FROM users WHERE user_id = ?";
-            $user_stmt = $pdo->prepare($user_query);
-            $user_stmt->execute([$user_id]);
-            $target_user = $user_stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($target_user) {
-                $user_email = decryptionData($target_user['email']);
-                $user_name = decryptionData($target_user['username']);
-                $first_name = decryptionData($target_user['first_name']);
-                $last_name = decryptionData($target_user['last_name']);
-
-                $mail = new PHPMailer(true);
-                try {
-                    $mail->isSMTP();
-                    $mail->Host       = SMTP_HOST;
-                    $mail->SMTPAuth   = true;
-                    $mail->Username   = SMTP_USER;
-                    $mail->Password   = SMTP_PASS;
-                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                    $mail->Port       = SMTP_PORT;
-
-                    $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
-                    $mail->addAddress($user_email, $first_name . " " . $last_name);
-
-                    $mail->isHTML(true);
-
-                    if ($action === 'approve') {
-                        $new_role = $_POST['role'] ?? 'Student';
-                        $update_query = "UPDATE users SET approval_status = 'Approved', role = ? WHERE user_id = ?";
-                        $update_stmt = $pdo->prepare($update_query);
-                        $update_stmt->execute([$new_role, $user_id]);
-
-                        $mail->Subject = 'Account Approved - LibroTech';
-                        $mail->Body    = "Hello $first_name,<br><br>Your account (User ID: <b>$user_id</b>, Username: <b>$user_name</b>) was approved by the administrator.<br>You can now login to the system.<br><br>Best regards,<br>LibroTech Administration";
-
-                        $success_msg = "User approved and notified via email.";
-                    } elseif ($action === 'reject') {
-                        $reason = $_POST['reason'] ?? 'No reason provided.';
-                        $update_query = "UPDATE users SET approval_status = 'Rejected' WHERE user_id = ?";
-                        $update_stmt = $pdo->prepare($update_query);
-                        $update_stmt->execute([$user_id]);
-
-                        $mail->Subject = 'Account Registration Update - LibroTech';
-                        $mail->Body    = "Hello $first_name,<br><br>Your account registration was rejected by the administration.<br><b>Reason:</b> $reason<br><br>Best regards,<br>LibroTech Administration";
-
-                        $success_msg = "User rejected and notified via email.";
-                    } elseif ($action === 'deactivate') {
-                        $reason = $_POST['reason'] ?? 'No reason provided.';
-                        $update_query = "UPDATE users SET approval_status = 'Inactive' WHERE user_id = ?";
-                        $update_stmt = $pdo->prepare($update_query);
-                        $update_stmt->execute([$user_id]);
-
-                        $mail->Subject = 'Account Deactivated - LibroTech';
-                        $mail->Body    = "Hello $first_name,<br><br>Your account (Username: <b>$user_name</b>) was deactivated by the administration.<br><b>Reason:</b> $reason<br><br>Best regards,<br>LibroTech Administration";
-
-                        $success_msg = "User deactivated and notified via email.";
-                    } elseif ($action === 'activate') {
-                        $update_query = "UPDATE users SET approval_status = 'Approved' WHERE user_id = ?";
-                        $update_stmt = $pdo->prepare($update_query);
-                        $update_stmt->execute([$user_id]);
-
-                        $mail->Subject = 'Account Reactivated - LibroTech';
-                        $mail->Body    = "Hello $first_name,<br><br>Your account (Username: <b>$user_name</b>) has been reactivated by the administration.<br>You can now login to the system again.<br><br>Best regards,<br>LibroTech Administration";
-
-                        $success_msg = "User reactivated and notified via email.";
-                    }
-                    $mail->send();
-                } catch (Exception $e) {
-                    $error_msg = "Action completed, but email failed: " . $mail->ErrorInfo;
-                }
-            } else {
-                $error_msg = "User not found.";
-            }
-        }
-    }
-}
-
-// Fetch all users
-$query = "SELECT * FROM users ORDER BY created_at DESC";
-$stmt = $pdo->prepare($query);
-$stmt->execute();
-$all_users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-$pending_count = 0;
-foreach ($all_users as $u) {
-    if ($u['approval_status'] === 'Pending') $pending_count++;
-}
+require_once __DIR__ . '/../backend/process_manage_user.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -133,216 +12,11 @@ foreach ($all_users as $u) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../../../../src/css/styles.css">
     <link rel="stylesheet" href="../../../../src/css/dashboard.css">
-    <style>
-        /* Specific styles for Manage Users page */
-        .management-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
-
-        .breadcrumb {
-            display: flex;
-            gap: 10px;
-            font-size: 14px;
-            color: var(--text-lighter);
-            margin-bottom: 5px;
-        }
-
-        .breadcrumb a {
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-
-        /* Tabbed Interface */
-        .user-tabs {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 25px;
-            background: #e2e8f0;
-            padding: 5px;
-            border-radius: 12px;
-            width: fit-content;
-        }
-
-        .tab-btn {
-            padding: 8px 20px;
-            border-radius: 8px;
-            border: none;
-            background: none;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-lighter);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .tab-btn.active {
-            background: white;
-            color: var(--primary-color);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .tab-btn:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.5);
-        }
-
-        /* Users Table */
-        .users-table-container {
-            background: white;
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-md);
-            overflow: hidden;
-        }
-
-        .users-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-        }
-
-        .users-table th {
-            background: #f8fafc;
-            padding: 15px 20px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-lighter);
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .users-table td {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 14px;
-        }
-
-        .user-identity {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .user-pfp {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--primary-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 14px;
-        }
-
-        .user-name {
-            display: block;
-            font-weight: 600;
-            color: var(--text-dark);
-        }
-
-        .user-email {
-            display: block;
-            font-size: 12px;
-            color: var(--text-lighter);
-        }
-
-        .role-pill {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .role-librarian {
-            background: #fff7ed;
-            color: #c2410c;
-        }
-
-        .role-student {
-            background: #eff6ff;
-            color: #1d4ed8;
-        }
-
-        .role-admin {
-            background: #f5f3ff;
-            color: #6d28d9;
-        }
-
-        .actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .action-btn {
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .btn-approve {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-reject {
-            background: #ef4444;
-            color: white;
-        }
-
-        .btn-manage {
-            background: #f1f5f9;
-            color: var(--text-dark);
-            border: 1px solid var(--border-color);
-        }
-
-        .badge-inactive {
-            background: #f1f5f9;
-            color: #64748b;
-        }
-
-        .badge-rejected {
-            background: #fee2e2;
-            color: #ef4444;
-        }
-
-        .action-btn:hover {
-            transform: translateY(-2px);
-            filter: brightness(0.9);
-        }
-
-        .alert {
-            padding: 12px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .alert-success {
-            background: #dcfce7;
-            color: #15803d;
-            border: 1px solid #bdf0cc;
-        }
-
-        .alert-error {
-            background: #fee2e2;
-            color: #ef4444;
-            border: 1px solid #fecaca;
-        }
-    </style>
+    <link rel="stylesheet" href="../src/css/manage_user.css">
 </head>
 
 <body class="dashboard-body">
+
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -501,16 +175,16 @@ foreach ($all_users as $u) {
                                                 <input type="text" name="reason" placeholder="Deactivation reason..." style="font-size: 11px; padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); width: 120px;">
                                                 <div class="actions">
                                                     <button type="submit" name="action" value="deactivate" class="action-btn" style="background: #94a3b8; color: white; border-radius: 6px; padding: 5px 10px; font-size: 11px; width: auto; border: none; cursor: pointer;">Deactivate</button>
-                                                    <button type="submit" name="action" value="delete" class="action-btn" style="background: #ef4444; color: white; border-radius: 6px; padding: 5px 10px; font-size: 11px; width: auto; border: none; cursor: pointer;" onclick="return confirm('Are you sure you want to permanently delete this account?')">Delete</button>
+                                                    <button type="button" class="action-btn open-delete-modal" data-id="<?php echo $user['user_id']; ?>" data-name="<?php echo htmlspecialchars($fname . " " . $lname); ?>" style="background: #ef4444; color: white; border-radius: 6px; padding: 5px 10px; font-size: 11px; width: auto; border: none; cursor: pointer;">Delete</button>
                                                 </div>
                                             <?php elseif ($status === 'Inactive'): ?>
                                                 <div class="actions">
                                                     <button type="submit" name="action" value="activate" class="action-btn" style="background: var(--primary-color); color: white; border-radius: 6px; padding: 5px 10px; font-size: 11px; width: auto; border: none; cursor: pointer;">Activate</button>
-                                                    <button type="submit" name="action" value="delete" class="action-btn" style="background: #ef4444; color: white; border-radius: 6px; padding: 5px 10px; font-size: 11px; width: auto; border: none; cursor: pointer;" onclick="return confirm('Are you sure you want to permanently delete this account?')">Delete</button>
+                                                    <button type="button" class="action-btn open-delete-modal" data-id="<?php echo $user['user_id']; ?>" data-name="<?php echo htmlspecialchars($fname . " " . $lname); ?>" style="background: #ef4444; color: white; border-radius: 6px; padding: 5px 10px; font-size: 11px; width: auto; border: none; cursor: pointer;">Delete</button>
                                                 </div>
                                             <?php elseif ($status === 'Rejected'): ?>
                                                 <div class="actions">
-                                                    <button type="submit" name="action" value="delete" class="action-btn" style="background: #ef4444; color: white; border-radius: 6px; padding: 5px 10px; font-size: 11px; width: auto; border: none; cursor: pointer;" onclick="return confirm('Are you sure you want to permanently delete this account?')">Delete Account</button>
+                                                    <button type="button" class="action-btn open-delete-modal" data-id="<?php echo $user['user_id']; ?>" data-name="<?php echo htmlspecialchars($fname . " " . $lname); ?>" style="background: #ef4444; color: white; border-radius: 6px; padding: 5px 10px; font-size: 11px; width: auto; border: none; cursor: pointer;">Delete Account</button>
                                                 </div>
                                             <?php endif; ?>
                                         </form>
@@ -518,39 +192,47 @@ foreach ($all_users as $u) {
                                 </td>
                             </tr>
                         <?php endforeach; ?>
+                        <tr id="emptyStateRow" style="display: none;">
+                            <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                                <span id="emptyStateMessage">No users found matching this filter.</span>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </main>
 
+    <!-- Delete User Modal -->
+    <div id="deleteUserModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
+        <div class="modal-content" style="background: white; margin: 15vh auto; padding: 0; border-radius: 16px; width: 90%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; text-align: center;">
+            <div class="modal-header" style="padding: 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: center; position: relative;">
+                <h2 style="margin: 0; font-size: 1.2rem; color: var(--text-dark);">Confirm Delete</h2>
+                <span class="close-modal" style="position: absolute; right: 20px; top: 18px; font-size: 24px; color: #94a3b8; cursor: pointer;">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 30px;">
+                <div style="font-size: 50px; color: #ef4444; margin-bottom: 20px;">
+                    <i class="fas fa-user-times"></i>
+                </div>
+                <p style="font-size: 1rem; color: var(--text-dark); line-height: 1.5; margin-bottom: 10px;">Are you sure you want to permanently delete <br><strong id="deleteUserName" style="color: #ef4444;"></strong>'s account?</p>
+                <p style="font-size: 13px; color: var(--text-muted);">
+                    <i class="fas fa-exclamation-triangle"></i> This action is irreversible and will remove all user data.
+                </p>
+            </div>
+            <form action="manage_user.php" method="POST">
+                <input type="hidden" name="user_id" id="deleteUserId">
+                <input type="hidden" name="action" value="delete">
+                <div class="modal-footer" style="padding: 0 30px 35px; display: flex; justify-content: center; gap: 12px; background: white; border-top: none;">
+                    <button type="submit" name="confirm_delete" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;">Yes, Delete Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="../../../../src/js/dashboard.js"></script>
-    <script>
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const filter = btn.getAttribute('data-filter');
-                if (!filter) return; // Skip if it's the badge-only part or something
-
-                // Update active tab
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-
-                // Filter rows
-                document.querySelectorAll('.user-row').forEach(row => {
-                    const role = row.getAttribute('data-role');
-                    const status = row.getAttribute('data-status');
-
-                    if (filter === 'all') {
-                        row.style.display = 'table-row';
-                    } else if (filter === 'Pending') {
-                        row.style.display = (status === 'Pending') ? 'table-row' : 'none';
-                    } else if (filter === 'Librarian' || filter === 'Student') {
-                        row.style.display = (role === filter && status === 'Approved') ? 'table-row' : 'none';
-                    }
-                });
-            });
-        });
-    </script>
+    <script src="../src/js/manage_user.js"></script>
 </body>
+
+</html>
 
 </html>
