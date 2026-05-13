@@ -27,8 +27,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     //check user string length
-    if (!preg_match("^[A-Za-z\s'-]{3,50}$", $firstname) || !preg_match("^[A-Za-z\s'-]{3,50}$", $lastname)) {
-        $_SESSION['error'] = "All fields must be at least 3 characters long.";
+
+    if (strlen($firstname) < 3) {
+        $_SESSION['error'] = "First name must be at least 3 characters long.";
+        header("Location: ../public/studentRegister.php");
+        exit();
+    }
+
+    if (strlen($lastname) < 3) {
+        $_SESSION['error'] = "Last name must be at least 3 characters long.";
         header("Location: ../public/studentRegister.php");
         exit();
     }

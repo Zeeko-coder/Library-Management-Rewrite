@@ -30,6 +30,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $student_name = decryptionData($info['first_name']) . " " . decryptionData($info['last_name']);
         $book_title = $info['title'];
 
+        // Return copies to stock
+        $update_stock = $pdo->prepare("UPDATE books b JOIN borrowings br ON b.book_id = br.book_id SET b.available_copies = b.available_copies + br.quantity WHERE br.id = ?");
+        $update_stock->execute([$borrow_id]);
+
         $stmt = $pdo->prepare("UPDATE borrowings SET status = 'returned', return_date = NOW() WHERE id = ? AND user_id = ?");
         $stmt->execute([$borrow_id, $student_id]);
         

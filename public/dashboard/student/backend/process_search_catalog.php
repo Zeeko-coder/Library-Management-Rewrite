@@ -64,6 +64,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['borrow_book'])) {
             throw new Exception("Not enough copies available.");
         }
 
+        // Check if user already has this book title borrowed (active loan)
+        $dup_stmt = $pdo->prepare("
+            SELECT COUNT(*) 
+            FROM borrowings br 
+            JOIN books b ON br.book_id = b.book_id 
+            WHERE br.user_id = ? 
+            AND b.title = ? 
+            AND br.status NOT IN ('returned', 'rejected', 'Returned', 'Rejected')
+        ");
+        $dup_stmt->execute([$student_id, $book['title']]);
+        if ($dup_stmt->fetchColumn() > 0) {
+            throw new Exception("You have already borrowed this book title with borrow copies");
+        }
+
         // Insert pending borrowing request
         $insert_stmt = $pdo->prepare("INSERT INTO borrowings (user_id, book_id, quantity, borrow_date, due_date, status) VALUES (?, ?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 7 DAY), 'pending')");
         $insert_stmt->execute([$student_id, $book_id, $quantity]);

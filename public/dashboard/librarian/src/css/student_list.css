@@ -124,6 +124,18 @@
     outline: none;
 }
 
+.quantity-input {
+    width: 65px;
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid var(--border-light);
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    text-align: center;
+}
+
+
 .badge-count {
     background: #ef4444;
     color: white;
@@ -157,7 +169,10 @@
     background: white;
     border-radius: 16px;
     width: 450px;
-    max-width: 90%;
+    max-width: 95%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     overflow: hidden;
     animation: modalSlide 0.3s ease-out;
@@ -165,10 +180,11 @@
 
 .profile-modal-header {
     background: #3b82f6;
-    padding: 40px 20px;
+    padding: 30px 20px;
     text-align: center;
     color: white;
     position: relative;
+    flex-shrink: 0;
 }
 
 .modal-close-btn {
@@ -202,6 +218,7 @@
 
 .profile-modal-body {
     padding: 30px;
+    overflow-y: auto;
 }
 
 .modal-stat-grid {

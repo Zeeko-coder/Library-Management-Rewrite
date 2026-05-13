@@ -93,16 +93,6 @@ require_once __DIR__ . '/../backend/process_my_profile.php';
                     <div class="profile-avatar-large"><?php echo $initials; ?></div>
                     <h2><?php echo htmlspecialchars($full_name); ?></h2>
                     <p>University Student</p>
-                    <div class="profile-stats">
-                        <div class="stat-box">
-                            <h4><?php echo $returned_count; ?></h4>
-                            <span>Returned</span>
-                        </div>
-                        <div class="stat-box" style="border-left: 1px solid var(--border-light); padding-left: 20px;">
-                            <h4><?php echo $active_count; ?></h4>
-                            <span>Active Borrows</span>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Right: Details Card -->

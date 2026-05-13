@@ -52,19 +52,40 @@ try {
     $overdue_books = 0;
 }
 
-// Recent Circulation Records
+// Recent Activities (Combined Circulation and Book Additions)
 try {
-    $recent_stmt = $pdo->query("
-        SELECT br.*, b.title, u.first_name, u.last_name 
+    $activity_query = "
+        (SELECT 
+            br.borrow_date as activity_date, 
+            'circulation' as type, 
+            u.first_name, 
+            u.last_name, 
+            b.title, 
+            br.return_date,
+            NULL as category,
+            NULL as admin_role
         FROM borrowings br
         JOIN books b ON br.book_id = b.book_id
-        JOIN users u ON br.user_id = u.user_id
-        ORDER BY br.borrow_date DESC, br.id DESC
-        LIMIT 5
-    ");
-    $recent_circulation = $recent_stmt->fetchAll(PDO::FETCH_ASSOC);
+        JOIN users u ON br.user_id = u.user_id)
+        UNION ALL
+        (SELECT 
+            b.created_at as activity_date, 
+            'book_addition' as type, 
+            u.first_name, 
+            u.last_name, 
+            b.title, 
+            NULL as return_date,
+            b.category,
+            u.role as admin_role
+        FROM books b
+        LEFT JOIN users u ON b.added_by = u.user_id)
+        ORDER BY activity_date DESC 
+        LIMIT 10
+    ";
+    $activity_stmt = $pdo->query($activity_query);
+    $recent_activities = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    $recent_circulation = [];
+    $recent_activities = [];
 }
 
 // Overdue Reminders
@@ -220,33 +241,51 @@ function getTimeAgo($timestamp)
 
             <!-- Content Grid -->
             <div class="content-grid">
-                <!-- Recent Circulation -->
+                <!-- Recent Activity -->
                 <div class="data-card animate-up delay-6">
                     <div class="card-header">
-                        <h2>Recent Circulation Records</h2>
+                        <h2>Recent Activities</h2>
                         <a href="#" class="view-all">View All History</a>
                     </div>
                     <div class="activity-list">
-                        <?php if (empty($recent_circulation)): ?>
-                            <div class="activity-item">No recent circulation records.</div>
+                        <?php if (empty($recent_activities)): ?>
+                            <div class="activity-item">No recent activity.</div>
                         <?php else: ?>
-                            <?php foreach ($recent_circulation as $record):
-                                $is_return = !is_null($record['return_date']);
-                                $student_name = decryptionData($record['first_name']) . " " . decryptionData($record['last_name']);
-                            ?>
+                            <?php foreach ($recent_activities as $activity): ?>
                                 <div class="activity-item">
-                                    <div class="activity-img">
-                                        <?php if ($is_return): ?>
-                                            <i class="fas fa-arrow-up" style="color: #10b981;"></i>
-                                        <?php else: ?>
-                                            <i class="fas fa-arrow-down" style="color: #f59e0b;"></i>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="activity-info">
-                                        <span class="activity-title"><?php echo $is_return ? 'Return' : 'Borrow'; ?>: <?php echo htmlspecialchars($record['title']); ?></span>
-                                        <span class="activity-desc"><?php echo $is_return ? 'Returned' : 'Borrowed'; ?> by <strong><?php echo $student_name; ?></strong></span>
-                                    </div>
-                                    <div class="activity-time"><?php echo getTimeAgo($record['borrow_date']); ?></div>
+                                    <?php if ($activity['type'] === 'circulation'): 
+                                        $is_return = !is_null($activity['return_date']);
+                                        $student_name = decryptionData($activity['first_name']) . " " . decryptionData($activity['last_name']);
+                                    ?>
+                                        <div class="activity-img">
+                                            <?php if ($is_return): ?>
+                                                <i class="fas fa-arrow-up" style="color: #10b981;"></i>
+                                            <?php else: ?>
+                                                <i class="fas fa-arrow-down" style="color: #f59e0b;"></i>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="activity-info">
+                                            <span class="activity-title"><?php echo $is_return ? 'Return' : 'Borrow'; ?>: <?php echo htmlspecialchars($activity['title']); ?></span>
+                                            <span class="activity-desc"><?php echo $is_return ? 'Returned' : 'Borrowed'; ?> by <strong><?php echo $student_name; ?></strong></span>
+                                        </div>
+                                    <?php else: 
+                                        $admin_display = decryptionData($activity['first_name']) . " " . decryptionData($activity['last_name']);
+                                        if (empty(trim($admin_display))) {
+                                            $admin_display = $activity['admin_role'] ?: 'Administrator';
+                                        }
+                                    ?>
+                                        <div class="activity-img">
+                                            <i class="fas fa-book-medical" style="color: #10b981;"></i>
+                                        </div>
+                                        <div class="activity-info">
+                                            <span class="activity-title">New Book Added</span>
+                                            <span class="activity-desc">
+                                                <strong><?php echo $admin_display; ?></strong> added new book
+                                                (title: <?php echo htmlspecialchars($activity['title']); ?>)
+                                            </span>
+                                        </div>
+                                    <?php endif; ?>
+                                    <div class="activity-time"><?php echo getTimeAgo($activity['activity_date']); ?></div>
                                 </div>
                             <?php endforeach; ?>
                         <?php endif; ?>

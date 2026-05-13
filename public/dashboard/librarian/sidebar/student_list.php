@@ -93,6 +93,18 @@ require_once __DIR__ . '/../backend/process_student_list.php';
                         <span class="badge-count"><?php echo $new_overdue_count; ?></span>
                     <?php endif; ?>
                 </button>
+                <button class="tab-btn" data-tab="active">
+                    Active Borrow Students
+                    <?php if ($new_active_count > 0): ?>
+                        <span class="badge-count"><?php echo $new_active_count; ?></span>
+                    <?php endif; ?>
+                </button>
+                <button class="tab-btn" data-tab="returned">
+                    Returned Book
+                    <?php if ($new_returned_count > 0): ?>
+                        <span class="badge-count"><?php echo $new_returned_count; ?></span>
+                    <?php endif; ?>
+                </button>
             </div>
 
             <!-- Messages -->
@@ -111,7 +123,8 @@ require_once __DIR__ . '/../backend/process_student_list.php';
                                 <th>Student Member</th>
                                 <th>ID Number</th>
                                 <th>Status</th>
-                                <th>Borrowed</th>
+                                <th>Book title</th>
+                                <th>Copies</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -137,7 +150,10 @@ require_once __DIR__ . '/../backend/process_student_list.php';
                                             <?php echo $student['approval_status']; ?>
                                         </span>
                                     </td>
-                                    <td><?php echo $student['borrowed_count']; ?> Books</td>
+                                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        <?php echo htmlspecialchars($student['book_titles'] ?? 'None'); ?>
+                                    </td>
+                                    <td><?php echo $student['borrowed_copies'] ?? 0; ?> Copies</td>
                                     <td>
                                         <div class="actions">
                                             <button class="btn-action btn-manage"
@@ -145,8 +161,8 @@ require_once __DIR__ . '/../backend/process_student_list.php';
                                                     name: '<?php echo htmlspecialchars($fname . " " . $lname); ?>',
                                                     username: '<?php echo htmlspecialchars(decryptionData($student['username'])); ?>',
                                                     email: '<?php echo htmlspecialchars(decryptionData($student['email'])); ?>',
-                                                    returned: '<?php echo $student['returned_count']; ?>',
-                                                    active: '<?php echo $student['borrowed_count']; ?>',
+                                                    book_titles: '<?php echo htmlspecialchars($student['book_titles'] ?? 'None'); ?>',
+                                                    copies: '<?php echo $student['borrowed_copies'] ?? 0; ?>',
                                                     initials: '<?php echo $initials; ?>'
                                                 })">
                                                 View Profile
@@ -166,17 +182,18 @@ require_once __DIR__ . '/../backend/process_student_list.php';
                     <table class="users-table">
                         <thead>
                             <tr>
-                                <th>Student</th>
-                                <th>Book Title</th>
-                                <th>Request Date</th>
-                                <th>Set Duration</th>
-                                <th>Actions</th>
+                                 <th>Student</th>
+                                 <th>Book Title</th>
+                                 <th>Request Date</th>
+                                 <th>Copies</th>
+                                 <th>Set Duration</th>
+                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($borrow_requests)): ?>
                                 <tr>
-                                    <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">No pending borrow requests.</td>
+                                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">No pending borrow requests.</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($borrow_requests as $req):
@@ -184,27 +201,31 @@ require_once __DIR__ . '/../backend/process_student_list.php';
                                 ?>
                                     <tr>
                                         <td><strong><?php echo $name; ?></strong><br><small>ID: <?php echo $req['user_id']; ?></small></td>
-                                        <td><?php echo htmlspecialchars($req['title']); ?></td>
-                                        <td><?php echo date('M d, Y', strtotime($req['created_at'])); ?></td>
-                                        <td>
-                                            <form method="POST" id="form-<?php echo $req['id']; ?>" style="display: flex; align-items: center; gap: 10px;">
-                                                <input type="hidden" name="borrow_id" value="<?php echo $req['id']; ?>">
-                                                <select name="duration" class="duration-select">
-                                                    <option value="1 minute">1 Minute</option>
-                                                    <option value="1 hour">1 Hour</option>
-                                                    <option value="3 days">3 Days</option>
-                                                    <option value="7 days" selected>7 Days</option>
-                                                    <option value="14 days">14 Days</option>
-                                                    <option value="30 days">30 Days</option>
-                                                </select>
-                                        </td>
-                                        <td>
-                                            <div class="actions">
-                                                <button type="submit" name="action" value="approve_request" class="btn-action btn-approve"><i class="fas fa-check"></i> Approve</button>
-                                                <button type="submit" name="action" value="reject_request" class="btn-action btn-reject"><i class="fas fa-times"></i> Reject</button>
-                                            </div>
-                                            </form>
-                                        </td>
+                                         <td><?php echo htmlspecialchars($req['title']); ?></td>
+                                         <td><?php echo date('M d, Y', strtotime($req['created_at'])); ?></td>
+                                         <td>
+                                             <input type="number" name="quantity" value="<?php echo $req['quantity']; ?>" min="1" max="<?php echo $req['quantity'] + $req['stock']; ?>" form="form-<?php echo $req['id']; ?>" class="quantity-input">
+                                             <br><small style="font-size: 10px; color: var(--text-muted);">Max: <?php echo $req['quantity'] + $req['stock']; ?></small>
+                                         </td>
+                                         <td>
+                                             <select name="duration" form="form-<?php echo $req['id']; ?>" class="duration-select">
+                                                 <option value="1 minute">1 Minute</option>
+                                                 <option value="1 hour">1 Hour</option>
+                                                 <option value="3 days">3 Days</option>
+                                                 <option value="7 days" selected>7 Days</option>
+                                                 <option value="14 days">14 Days</option>
+                                                 <option value="30 days">30 Days</option>
+                                             </select>
+                                         </td>
+                                         <td>
+                                             <div class="actions">
+                                                 <form method="POST" id="form-<?php echo $req['id']; ?>" style="display: flex; align-items: center; gap: 8px;">
+                                                     <input type="hidden" name="borrow_id" value="<?php echo $req['id']; ?>">
+                                                     <button type="submit" name="action" value="approve_request" class="btn-action btn-approve"><i class="fas fa-check"></i> Approve</button>
+                                                     <button type="submit" name="action" value="reject_request" class="btn-action btn-reject"><i class="fas fa-times"></i> Reject</button>
+                                                 </form>
+                                             </div>
+                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
@@ -257,6 +278,98 @@ require_once __DIR__ . '/../backend/process_student_list.php';
                     </table>
                 </div>
             </div>
+            
+            <!-- Tab Content: Active Borrow Students -->
+            <div id="activeTab" class="tab-content animate-up delay-3" style="display: none;">
+                <div class="users-table-container">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Student Member</th>
+                                <th>Book Title</th>
+                                <th>Author</th>
+                                <th>Borrow Date</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($active_borrow_list)): ?>
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">No active borrow students found.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($active_borrow_list as $active): 
+                                    $fname = decryptionData($active['first_name']);
+                                    $lname = decryptionData($active['last_name']);
+                                    $initials = strtoupper(substr($fname, 0, 1) . substr($lname, 0, 1));
+                                ?>
+                                    <tr>
+                                        <td>
+                                            <div class="user-identity">
+                                                <div class="user-pfp" style="background: #3b82f6;"><?php echo $initials; ?></div>
+                                                <div>
+                                                    <span class="user-name" style="font-weight: 600;"><?php echo $fname . " " . $lname; ?></span>
+                                                    <span class="user-email" style="font-size: 12px; color: var(--text-muted);"><?php echo decryptionData($active['email']); ?></span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($active['title']); ?></td>
+                                        <td><?php echo htmlspecialchars($active['author']); ?></td>
+                                        <td><?php echo date('M d, Y', strtotime($active['borrow_date'])); ?></td>
+                                        <td><span style="color: #3b82f6; font-weight: 600;"><?php echo date('M d, Y', strtotime($active['due_date'])); ?></span></td>
+                                        <td><span class="status-badge" style="background: #eff6ff; color: #1e40af; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;">Borrowed</span></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab Content: Returned Books -->
+            <div id="returnedTab" class="tab-content animate-up delay-3" style="display: none;">
+                <div class="users-table-container">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Student Member</th>
+                                <th>Book title</th>
+                                <th>Copies</th>
+                                <th>Return Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($returned_list)): ?>
+                                <tr>
+                                    <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted);">No returned books found.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($returned_list as $ret): 
+                                    $fname = decryptionData($ret['first_name']);
+                                    $lname = decryptionData($ret['last_name']);
+                                    $initials = strtoupper(substr($fname, 0, 1) . substr($lname, 0, 1));
+                                ?>
+                                    <tr>
+                                        <td>
+                                            <div class="user-identity">
+                                                <div class="user-pfp" style="background: #10b981;"><?php echo $initials; ?></div>
+                                                <div>
+                                                    <span class="user-name" style="font-weight: 600;"><?php echo $fname . " " . $lname; ?></span>
+                                                    <span class="user-email" style="font-size: 12px; color: var(--text-muted);"><?php echo decryptionData($ret['email']); ?></span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($ret['title']); ?></td>
+                                        <td><?php echo $ret['quantity']; ?> Copies</td>
+                                        <td><?php echo date('M d, Y', strtotime($ret['return_date'])); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </main>
 
@@ -270,16 +383,6 @@ require_once __DIR__ . '/../backend/process_student_list.php';
                 <p id="modalUserRole" style="margin: 5px 0 0; opacity: 0.8; font-size: 0.9rem;">Student</p>
             </div>
             <div class="profile-modal-body">
-                <div class="modal-stat-grid">
-                    <div class="modal-stat-box">
-                        <h4 id="modalReturnedCount">0</h4>
-                        <span>Returned</span>
-                    </div>
-                    <div class="modal-stat-box">
-                        <h4 id="modalActiveCount">0</h4>
-                        <span>Active Borrows</span>
-                    </div>
-                </div>
                 <div class="modal-info-row">
                     <label>Username / ID Number</label>
                     <p id="modalUsername">ST-2024-001</p>
@@ -287,6 +390,14 @@ require_once __DIR__ . '/../backend/process_student_list.php';
                 <div class="modal-info-row">
                     <label>Email Address</label>
                     <p id="modalEmail">student@example.com</p>
+                </div>
+                <div class="modal-info-row">
+                    <label>Book Title</label>
+                    <p id="modalBookTitle">None</p>
+                </div>
+                <div class="modal-info-row">
+                    <label>Number of Copies</label>
+                    <p id="modalBookCopies">0</p>
                 </div>
                 <div class="modal-info-row">
                     <label>Member Role</label>

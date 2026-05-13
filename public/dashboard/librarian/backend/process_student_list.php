@@ -88,20 +88,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if ($action === 'approve_request') {
                     $duration = $_POST['duration']; // e.g. "1 minute", "1 hour", "7 days"
+                    $new_quantity = (int)$_POST['quantity'];
+                    $original_quantity = (int)$details['quantity'];
                     $due_date = date('Y-m-d H:i:s', strtotime("+$duration"));
 
-                    $stmt = $pdo->prepare("UPDATE borrowings SET status = 'borrowed', borrow_date = NOW(), due_date = ? WHERE id = ?");
-                    $stmt->execute([$due_date, $borrow_id]);
-                    $_SESSION['success_message'] = "Borrow request approved for $duration.";
+                    // Update stock: add back the difference (if librarian reduced it)
+                    // or subtract more (if librarian increased it - though UI should limit this)
+                    $diff = $original_quantity - $new_quantity;
+                    $update_stock = $pdo->prepare("UPDATE books SET available_copies = available_copies + ? WHERE book_id = ?");
+                    $update_stock->execute([$diff, $book_id]);
+
+                    $stmt = $pdo->prepare("UPDATE borrowings SET status = 'borrowed', borrow_date = NOW(), due_date = ?, quantity = ? WHERE id = ?");
+                    $stmt->execute([$due_date, $new_quantity, $borrow_id]);
+                    $_SESSION['success_message'] = "Borrow request approved for $duration (Quantity: $new_quantity).";
 
                     // Send Email
                     $mail->Subject = 'Book Borrowing Request Approved';
-                    $mail->Body    = "Hello <b>$student_name</b> (ID: <b>$user_id</b>), your book borrowing request for '<b>$book_title</b>' (ID: <b>$book_id</b>, Category: <b>$category</b>, Copies: <b>$quantity</b>) has been approved by Librarian <b>$librarian_full_name</b>. The borrowing period will end in <b>$duration</b> from now.";
+                    $mail->Body    = "Hello <b>$student_name</b> (ID: <b>$user_id</b>), your book borrowing request for '<b>$book_title</b>' (ID: <b>$book_id</b>, Category: <b>$category</b>, Copies: <b>$new_quantity</b>) has been approved by Librarian <b>$librarian_full_name</b>. The borrowing period will end in <b>$duration</b> from now.";
                     $mail->send();
                 } elseif ($action === 'reject_request') {
+                    // Return stock on rejection
+                    $update_stock = $pdo->prepare("UPDATE books SET available_copies = available_copies + ? WHERE book_id = ?");
+                    $update_stock->execute([$quantity, $book_id]);
+
                     $stmt = $pdo->prepare("UPDATE borrowings SET status = 'rejected' WHERE id = ?");
                     $stmt->execute([$borrow_id]);
-                    $_SESSION['success_message'] = "Borrow request rejected.";
+                    $_SESSION['success_message'] = "Borrow request rejected. $quantity copies returned to stock.";
 
                     // Send Email
                     $mail->Subject = 'Book Borrowing Request Rejected';
@@ -149,6 +161,8 @@ try {
     // 1. All Students
     $students_stmt = $pdo->prepare("
         SELECT u.*, 
+        (SELECT GROUP_CONCAT(bk.title SEPARATOR ', ') FROM borrowings b JOIN books bk ON b.book_id = bk.book_id WHERE b.user_id = u.user_id AND b.status IN ('borrowed', 'overdue')) as book_titles,
+        (SELECT SUM(quantity) FROM borrowings WHERE user_id = u.user_id AND status IN ('borrowed', 'overdue')) as borrowed_copies,
         (SELECT COUNT(*) FROM borrowings WHERE user_id = u.user_id AND status = 'borrowed') as borrowed_count,
         (SELECT COUNT(*) FROM borrowings WHERE user_id = u.user_id AND status = 'returned') as returned_count
         FROM users u 
@@ -160,7 +174,7 @@ try {
 
     // 2. Borrow Requests (Pending)
     $requests_stmt = $pdo->prepare("
-        SELECT b.*, bk.title, u.first_name, u.last_name, u.username as id_num
+        SELECT b.*, bk.title, bk.available_copies as stock, u.first_name, u.last_name, u.username as id_num
         FROM borrowings b
         JOIN books bk ON b.book_id = bk.book_id
         JOIN users u ON b.user_id = u.user_id
@@ -179,8 +193,35 @@ try {
         WHERE (b.status = 'overdue') OR (b.status = 'borrowed' AND b.due_date < CURRENT_DATE)
         ORDER BY b.due_date ASC
     ");
-    $overdue_stmt->execute();
     $overdue_list = $overdue_stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // 4. Returned Books
+    $returned_stmt = $pdo->prepare("
+        SELECT b.*, bk.title, u.first_name, u.last_name, u.email, u.user_id as student_id
+        FROM borrowings b
+        JOIN books bk ON b.book_id = bk.book_id
+        JOIN users u ON b.user_id = u.user_id
+        WHERE b.status IN ('returned', 'Returned')
+        ORDER BY b.return_date DESC
+    ");
+    $returned_stmt->execute();
+    $returned_list = $returned_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // 5. Active Borrow Students
+    $active_stmt = $pdo->prepare("
+        SELECT b.*, bk.title, bk.author, u.first_name, u.last_name, u.email, u.user_id as student_id
+        FROM borrowings b
+        JOIN books bk ON b.book_id = bk.book_id
+        JOIN users u ON b.user_id = u.user_id
+        WHERE b.status = 'borrowed'
+        ORDER BY b.borrow_date DESC
+    ");
+    $active_stmt->execute();
+    $active_borrow_list = $active_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Counts for badges
+    $active_borrow_count = count($active_borrow_list);
+    $returned_total_count = count($returned_list);
 
     // Tab counts (Unread since last visit)
     $new_request_count = 0;
@@ -192,8 +233,18 @@ try {
     foreach ($overdue_list as $od) {
         if ($od['due_date'] < date('Y-m-d H:i:s') && $od['due_date'] > $last_view) $new_overdue_count++;
     }
+
+    $new_active_count = 0;
+    foreach ($active_borrow_list as $active) {
+        if ($active['borrow_date'] > $last_view) $new_active_count++;
+    }
+
+    $new_returned_count = 0;
+    foreach ($returned_list as $ret) {
+        if ($ret['return_date'] > $last_view) $new_returned_count++;
+    }
 } catch (PDOException $e) {
-    $all_students = $borrow_requests = $overdue_list = [];
-    $new_request_count = $new_overdue_count = 0;
+    $all_students = $borrow_requests = $overdue_list = $returned_list = $active_borrow_list = [];
+    $new_request_count = $new_overdue_count = $new_active_count = $new_returned_count = 0;
 }
 ?>

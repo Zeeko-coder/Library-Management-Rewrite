@@ -1,10 +1,10 @@
 function viewProfile(data) {
     document.getElementById('modalFullName').textContent = data.name;
     document.getElementById('modalAvatar').textContent = data.initials;
-    document.getElementById('modalReturnedCount').textContent = data.returned;
-    document.getElementById('modalActiveCount').textContent = data.active;
     document.getElementById('modalUsername').textContent = data.username;
     document.getElementById('modalEmail').textContent = data.email;
+    document.getElementById('modalBookTitle').textContent = data.book_titles;
+    document.getElementById('modalBookCopies').textContent = data.copies;
 
     document.getElementById('viewProfileModal').classList.add('active');
 }
@@ -33,12 +33,18 @@ document.addEventListener('DOMContentLoaded', function() {
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
 
+            // Hide badge count when visited
+            const badge = tab.querySelector('.badge-count');
+            if (badge) badge.style.display = 'none';
+
             contents.forEach(c => c.style.display = 'none');
             document.getElementById(target + 'Tab').style.display = 'block';
 
             if (target === 'all') pageTitle.innerText = 'Student Directory';
             else if (target === 'requests') pageTitle.innerText = 'Borrow Requests';
             else if (target === 'overdue') pageTitle.innerText = 'Overdue Monitoring';
+            else if (target === 'active') pageTitle.innerText = 'Active Borrowing Students';
+            else if (target === 'returned') pageTitle.innerText = 'Returned Books History';
         });
     });
 

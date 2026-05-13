@@ -58,24 +58,12 @@ try {
     $manual_stmt->execute([$student_id]);
     $unread_count += $manual_stmt->fetchColumn();
 
-    // Fetch Profile Stats
-    // 1. Returned
-    $returned_stmt = $pdo->prepare("SELECT COUNT(*) FROM borrowings WHERE user_id = ? AND status = 'returned'");
-    $returned_stmt->execute([$student_id]);
-    $returned_count = $returned_stmt->fetchColumn();
-
-    // 2. Active
-    $active_stmt = $pdo->prepare("SELECT COUNT(*) FROM borrowings WHERE user_id = ? AND status IN ('borrowed', 'overdue')");
-    $active_stmt->execute([$student_id]);
-    $active_count = $active_stmt->fetchColumn();
-
     $full_name = decryptionData($student_data['first_name']) . " " . decryptionData($student_data['last_name']);
     $initials = strtoupper(substr(decryptionData($student_data['first_name']), 0, 1) . substr(decryptionData($student_data['last_name']), 0, 1));
     $decrypted_username = decryptionData($student_data['username']);
     $decrypted_email = decryptionData($student_data['email']);
 } catch (PDOException $e) {
     $unread_count = 0;
-    $returned_count = $active_count = 0;
     $full_name = "Student User";
     $initials = "ST";
 }
