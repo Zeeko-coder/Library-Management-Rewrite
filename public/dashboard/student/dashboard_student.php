@@ -10,6 +10,9 @@ include '../../../helpers/cryptography_process.php';
 
 $student_id = $_SESSION['user_id'];
 
+// No longer using formatted library_id
+$library_id = $student_id;
+
 // Get unread notification count for sidebar
 $unread_count = 0;
 try {
@@ -31,6 +34,11 @@ try {
     $manual_stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
     $manual_stmt->execute([$student_id]);
     $unread_count += $manual_stmt->fetchColumn();
+
+    // Add notification for new books added since last view
+    $new_books_stmt = $pdo->prepare("SELECT COUNT(*) FROM books WHERE created_at > ?");
+    $new_books_stmt->execute([$last_view]);
+    $unread_count += $new_books_stmt->fetchColumn();
 } catch (PDOException $e) {
     $unread_count = 0;
 }
@@ -54,7 +62,7 @@ $stmt->execute([$student_id]);
 $due_soon_count = $stmt->fetchColumn();
 
 
-// Fetch Currently Reading Books
+// Fetch Currently Borrowing Books
 $stmt = $pdo->prepare("
     SELECT b.title, br.due_date, br.status, DATEDIFF(br.due_date, CURDATE()) as days_left 
     FROM borrowings br 
@@ -63,7 +71,7 @@ $stmt = $pdo->prepare("
     ORDER BY br.due_date ASC
 ");
 $stmt->execute([$student_id]);
-$currently_reading = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$currently_borrowing = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 
@@ -124,14 +132,10 @@ $currently_reading = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <main class="main-content">
         <!-- Top Header -->
         <header class="top-header animate-fade">
-            <div class="header-search">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Find your next great read...">
-            </div>
-            <div class="header-user">
+            <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name"><?php echo $_SESSION['username'] ?? 'Student User'; ?></span>
-                    <span class="user-role">Undergraduate</span>
+                    <span class="user-role">Student</span>
                 </div>
                 <div class="user-avatar">
                     <?php
@@ -184,19 +188,19 @@ $currently_reading = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             <!-- Content Grid -->
             <div class="content-grid">
-                <!-- Currently Reading -->
+                <!-- Currently Borrowing -->
                 <div class="data-card animate-up delay-6">
                     <div class="card-header">
-                        <h2>Currently Reading</h2>
+                        <h2>Currently Borrowing</h2>
                         <a href="#" class="view-all">View All Borrowed</a>
                     </div>
                     <div class="activity-list">
-                        <?php if (empty($currently_reading)): ?>
+                        <?php if (empty($currently_borrowing)): ?>
                             <div class="activity-item" style="justify-content: center; padding: 20px; color: var(--text-lighter);">
-                                <span>You are not currently reading any books. <a href="sidebar/search_catalog.php" style="color: var(--primary-color);">Explore the catalog</a></span>
+                                <span>You are not currently borrowing any books. <a href="sidebar/search_catalog.php" style="color: var(--primary-color);">Explore the catalog</a></span>
                             </div>
                         <?php else: ?>
-                            <?php foreach ($currently_reading as $book): ?>
+                            <?php foreach ($currently_borrowing as $book): ?>
                                 <div class="activity-item">
                                     <div class="activity-img">
                                         <i class="fas fa-book"></i>

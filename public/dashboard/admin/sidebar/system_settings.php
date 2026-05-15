@@ -61,11 +61,7 @@ require_once __DIR__ . '/../backend/process_system_settings.php';
     <main class="main-content">
         <!-- Top Header -->
         <header class="top-header animate-fade">
-            <div class="header-search">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search configuration settings...">
-            </div>
-            <div class="header-user">
+            <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name">System Admin</span>
                     <span class="user-role">Administrator</span>

@@ -111,32 +111,29 @@ $library_name = getSetting('library_name', 'LibroTech');
                     </div>
                 </div>
                 <div class="about-text">
-                    <h3>Transforming Library Management Since 2020</h3>
+                    <h3>A Unified Library Management Ecosystem</h3>
                     <p>
-                        LibroTech is a cutting-edge library management system designed to modernize
-                        how libraries operate. We combine intuitive design with powerful features to
-                        make library management effortless.
+                        LibroTech is a specialized management system designed to bridge the gap between students, librarians, and administrators. Our platform streamlines the entire lifecycle of a book—from initial cataloging to real-time availability tracking.
                     </p>
                     <p>
-                        Our mission is to empower librarians, educators, and administrators with tools
-                        that simplify daily operations while enhancing the user experience for patrons.
+                        Built with a focus on security and efficiency, LibroTech features multi-factor authentication (OTP), encrypted user data, and automated stock synchronization to ensure that physical inventory is always accurately reflected digitally.
                     </p>
                     <div class="about-features">
                         <div class="about-feature">
                             <i class="fas fa-check-circle"></i>
-                            <span>User-Friendly Interface</span>
+                            <span>Role-Based Dashboards</span>
                         </div>
                         <div class="about-feature">
                             <i class="fas fa-check-circle"></i>
-                            <span>Cloud-Based Access</span>
+                            <span>Secure OTP Verification</span>
                         </div>
                         <div class="about-feature">
                             <i class="fas fa-check-circle"></i>
-                            <span>24/7 Support</span>
+                            <span>Automated Stock Sync</span>
                         </div>
                         <div class="about-feature">
                             <i class="fas fa-check-circle"></i>
-                            <span>Secure & Reliable</span>
+                            <span>Overdue Tracking</span>
                         </div>
                     </div>
                 </div>
@@ -156,43 +153,43 @@ $library_name = getSetting('library_name', 'LibroTech');
                     <div class="feature-icon">
                         <i class="fas fa-book"></i>
                     </div>
-                    <h3>Book Cataloging</h3>
-                    <p>Organize and manage your entire book collection with advanced search and categorization features.</p>
+                    <h3>Smart Cataloging</h3>
+                    <p>Librarians can manage inventory with automated status updates that sync instantly with the student catalog.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i class="fas fa-user-circle"></i>
+                        <i class="fas fa-shield-alt"></i>
                     </div>
-                    <h3>Member Management</h3>
-                    <p>Track members, manage registrations, and maintain user profiles with ease.</p>
+                    <h3>MFA Security</h3>
+                    <p>Enhanced protection using OTP verification for student and librarian logins via SMS and Email.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <i class="fas fa-exchange-alt"></i>
                     </div>
-                    <h3>Circulation System</h3>
-                    <p>Handle book borrowing, returns, and renewals with automated tracking and notifications.</p>
+                    <h3>Circulation Desk</h3>
+                    <p>Full control over book borrowing, returns, and approvals with precise quantity tracking.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i class="fas fa-search"></i>
+                        <i class="fas fa-user-lock"></i>
                     </div>
-                    <h3>Advanced Search</h3>
-                    <p>Powerful search capabilities to quickly find books by title, author, genre, or ISBN.</p>
+                    <h3>Data Privacy</h3>
+                    <p>Industry-standard AES-256 encryption ensures that all sensitive member information is protected at rest.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i class="fas fa-chart-bar"></i>
+                        <i class="fas fa-chart-line"></i>
                     </div>
                     <h3>Reports & Analytics</h3>
-                    <p>Generate detailed reports on circulation, popular books, and library usage statistics.</p>
+                    <p>Admins can generate detailed borrowing insights, overdue monitoring, and library usage statistics.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i class="fas fa-bell"></i>
+                        <i class="fas fa-clock"></i>
                     </div>
-                    <h3>Notifications</h3>
-                    <p>Automated reminders for due dates, overdue books, and new arrivals via email or SMS.</p>
+                    <h3>Overdue Tracking</h3>
+                    <p>Automated identification of overdue books with quick-notify buttons for librarians to alert students.</p>
                 </div>
             </div>
         </div>

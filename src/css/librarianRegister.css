@@ -128,6 +128,53 @@ p {
     box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
 }
 
+.register-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #94A3B8;
+    transform: none;
+    box-shadow: none;
+}
+
+.agreement-group {
+    margin: 20px 0;
+    text-align: left;
+    background: rgba(243, 244, 246, 0.5);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #E5E7EB;
+}
+
+.agreement-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #111827;
+    font-weight: 500;
+}
+
+.agreement-checkbox input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.terms-link {
+    color: #D97706;
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+.terms-summary {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #6B7280;
+    line-height: 1.4;
+    padding-left: 28px;
+}
+
 .login-link {
     margin-top: 20px;
     padding-top: 20px;
@@ -169,6 +216,76 @@ p {
 
 .back-home a:hover {
     color: #D97706;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #111827;
+}
+
+.close-modal {
+    font-size: 24px;
+    color: #94A3B8;
+    cursor: pointer;
+}
+
+.terms-body h4 {
+    margin: 20px 0 10px;
+    color: #D97706;
+}
+
+.terms-body p, .terms-body li {
+    font-size: 14px;
+    color: #4B5563;
+    line-height: 1.6;
+}
+
+.terms-body ul {
+    padding-left: 20px;
+    margin-bottom: 15px;
 }
 
 @keyframes fadeInUp {

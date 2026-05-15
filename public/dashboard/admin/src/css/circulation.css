@@ -229,6 +229,10 @@
     color: var(--text-lighter);
     text-transform: uppercase;
     border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: inset 0 -1px 0 var(--border-color);
 }
 
 .circ-table td {
@@ -242,25 +246,30 @@
     align-items: center;
     gap: 6px;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
 }
 
 .indicator-dot {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
 }
 
-.status-active {
-    color: #3b82f6;
+.status-borrowed {
+    background: #eff6ff;
+    color: #1e40af;
 }
 
-.status-active .indicator-dot {
+.status-borrowed .indicator-dot {
     background: #3b82f6;
 }
 
 .status-overdue {
-    color: #ef4444;
+    background: #fef2f2;
+    color: #991b1b;
 }
 
 .status-overdue .indicator-dot {
@@ -268,11 +277,51 @@
 }
 
 .status-returned {
-    color: #10b981;
+    background: #f0fdf4;
+    color: #15803d;
 }
 
 .status-returned .indicator-dot {
     background: #10b981;
+}
+
+.status-pending {
+    background: #fff7ed;
+    color: #9a3412;
+}
+
+.status-pending .indicator-dot {
+    background: #f59e0b;
+}
+
+.status-rejected {
+    background: #f9fafb;
+    color: #374151;
+}
+
+.status-rejected .indicator-dot {
+    background: #6b7280;
+}
+
+/* Row Highlighting */
+.transaction-row[data-status="overdue"] {
+    background-color: rgba(239, 68, 68, 0.02);
+}
+
+.transaction-row[data-status="returned"] {
+    background-color: rgba(16, 185, 129, 0.01);
+}
+
+.transaction-row[data-status="pending"] {
+    background-color: rgba(245, 158, 11, 0.01);
+}
+
+.transaction-row[data-status="rejected"] {
+    background-color: rgba(107, 114, 128, 0.01);
+}
+
+.transaction-row:hover {
+    background-color: #f8fafc !important;
 }
 
 .due-date {

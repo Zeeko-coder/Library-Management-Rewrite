@@ -66,6 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
     $_SESSION['user_id'] = $userId;
     $_SESSION['username'] = $_SESSION['temp_username'];
+    $_SESSION['role'] = $_SESSION['temp_role'];
 
     // Clear temp variables
     unset($_SESSION['temp_user_id']);

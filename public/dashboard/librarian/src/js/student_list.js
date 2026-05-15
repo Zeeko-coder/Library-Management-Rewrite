@@ -14,14 +14,14 @@ function closeProfileModal() {
 }
 
 // Close modal when clicking outside
-window.onclick = function(event) {
+window.onclick = function (event) {
     let modal = document.getElementById('viewProfileModal');
     if (event.target == modal) {
         closeProfileModal();
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const tabs = document.querySelectorAll('.tab-btn');
     const contents = document.querySelectorAll('.tab-content');
     const pageTitle = document.getElementById('pageTitle');
@@ -48,15 +48,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Simple Search
-    const searchInput = document.querySelector('.header-search input');
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
+    // Tab-specific Search
+    const tabSearchInputs = document.querySelectorAll('.tab-search-input');
+    tabSearchInputs.forEach(input => {
+        input.addEventListener('input', function () {
             const term = this.value.toLowerCase();
-            const rows = document.querySelectorAll('.tab-content:not([style*="display: none"]) .users-table tbody tr');
+            const target = this.getAttribute('data-target');
+            const table = document.getElementById(target + 'Table');
+            if (!table) return;
+
+            const rows = table.querySelectorAll('tbody tr:not(.empty-row)');
+            let visibleCount = 0;
+
             rows.forEach(row => {
-                row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+                const text = row.innerText.toLowerCase();
+                const isMatch = text.includes(term);
+                row.style.display = isMatch ? '' : 'none';
+                if (isMatch) visibleCount++;
             });
+        });
+    });
+
+    // Sync header search with active tab search
+    const headerSearchInput = document.querySelector('.header-search input');
+    if (headerSearchInput) {
+        headerSearchInput.addEventListener('input', function () {
+            const term = this.value.toLowerCase();
+            const activeTab = document.querySelector('.tab-content:not([style*="display: none"])');
+            if (!activeTab) return;
+
+            const tabSearch = activeTab.querySelector('.tab-search-input');
+            if (tabSearch) {
+                tabSearch.value = this.value;
+                tabSearch.dispatchEvent(new Event('input'));
+            }
         });
     }
 });

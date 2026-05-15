@@ -112,20 +112,20 @@ require_once __DIR__ . '/backend/process_dashboard_admin.php';
                 </div>
                 <div class="stat-card animate-up delay-4">
                     <div class="stat-details">
-                        <h3>Transactions</h3>
-                        <span class="number"><?php echo number_format($transactions); ?></span>
+                        <h3>Librarian Users</h3>
+                        <span class="number"><?php echo number_format($librarian_count); ?></span>
                     </div>
-                    <div class="stat-icon icon-borrow">
-                        <i class="fas fa-exchange-alt"></i>
+                    <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                        <i class="fas fa-user-tie"></i>
                     </div>
                 </div>
                 <div class="stat-card animate-up delay-5">
                     <div class="stat-details">
-                        <h3>Overdue Books</h3>
-                        <span class="number"><?php echo number_format($overdue_books); ?></span>
+                        <h3>Student Users</h3>
+                        <span class="number"><?php echo number_format($student_count); ?></span>
                     </div>
-                    <div class="stat-icon icon-overdue">
-                        <i class="fas fa-exclamation-circle"></i>
+                    <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+                        <i class="fas fa-user-graduate"></i>
                     </div>
                 </div>
             </div>
@@ -133,7 +133,7 @@ require_once __DIR__ . '/backend/process_dashboard_admin.php';
             <!-- Content Grid -->
             <div class="content-grid">
                 <!-- Recent Activity -->
-                <div class="data-card animate-up delay-6">
+                <div class="data-card animate-up delay-7">
                     <div class="card-header">
                         <h2>System-wide Activity</h2>
                         <a href="#" class="view-all">View Audit Logs</a>
@@ -181,7 +181,7 @@ require_once __DIR__ . '/backend/process_dashboard_admin.php';
                 </div>
 
                 <!-- Pending Approvals -->
-                <div class="data-card animate-up delay-6">
+                <div class="data-card animate-up delay-7">
                     <div class="card-header">
                         <h2>Pending Approvals</h2>
                         <a href="#" class="view-all">Manage All</a>

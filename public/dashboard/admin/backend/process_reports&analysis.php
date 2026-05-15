@@ -8,7 +8,26 @@ try {
     $total_borrows = $pdo->query("SELECT COUNT(*) FROM borrowings")->fetchColumn() ?: 0;
     $unique_borrowers = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM borrowings")->fetchColumn() ?: 0;
     $returned_books = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE status = 'returned'")->fetchColumn() ?: 0;
-    $overdue_count = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE status = 'borrowed' AND due_date < CURRENT_DATE")->fetchColumn() ?: 0;
+    $overdue_count = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE (status = 'overdue' OR (status = 'borrowed' AND due_date < NOW())) AND return_date IS NULL")->fetchColumn() ?: 0;
+    $pending_count = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE status = 'pending'")->fetchColumn() ?: 0;
+    $rejected_count = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE status = 'rejected'")->fetchColumn() ?: 0;
+
+    // Fetch Status Distribution for Pie Chart
+    $status_dist = $pdo->query("
+        SELECT status, COUNT(*) as count 
+        FROM borrowings 
+        GROUP BY status
+    ")->fetchAll(PDO::FETCH_KEY_PAIR);
+
+    // Fetch Borrowing Trends (Last 7 Days)
+    $trend_stmt = $pdo->query("
+        SELECT DATE(created_at) as date, COUNT(*) as count 
+        FROM borrowings 
+        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        GROUP BY DATE(created_at)
+        ORDER BY date ASC
+    ");
+    $trend_data = $trend_stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Fetch category distribution
     $category_stmt = $pdo->query("

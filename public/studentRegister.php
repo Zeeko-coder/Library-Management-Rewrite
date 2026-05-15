@@ -99,7 +99,17 @@
             }
             ?>
 
-            <button type="submit" class="register-btn">
+            <div class="agreement-group">
+                <label class="agreement-checkbox">
+                    <input type="checkbox" id="agreement" name="agreement">
+                    <span>I agree to the <a href="#" class="terms-link">Terms and Conditions</a> of LibroTech</span>
+                </label>
+                <div class="terms-summary">
+                    By checking this box, you agree to follow the library policies, maintain the condition of borrowed books, and adhere to the specified return dates.
+                </div>
+            </div>
+
+            <button type="submit" class="register-btn" id="registerBtn" disabled>
                 <i class="fas fa-user-plus"></i> Register
             </button>
         </form>
@@ -116,6 +126,71 @@
         </div>
     </div>
 
+    <!-- Terms and Conditions Modal -->
+    <div id="termsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Terms and Conditions</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="terms-body">
+                <h4>1. Data Collection</h4>
+                <p>We collect personal information including your name, email, phone number, and academic details to manage your library account. This data is used for:</p>
+                <ul>
+                    <li>Maintaining borrowing records.</li>
+                    <li>Sending automated notifications for due dates and overdues.</li>
+                    <li>Ensuring account security and system integrity.</li>
+                </ul>
+                <p>All sensitive data is encrypted using industry-standard AES-256 encryption.</p>
+
+                <h4>2. Conditions of Use</h4>
+                <p>By registering at LibroTech, you agree to the following:</p>
+                <ul>
+                    <li>You will provide accurate and up-to-date information during registration.</li>
+                    <li>You are responsible for the physical condition of all books borrowed under your account.</li>
+                    <li>Books must be returned on or before the specified due date.</li>
+                    <li>Losing or damaging books may result in fines or suspension of borrowing privileges.</li>
+                    <li>Unauthorized access to other user accounts or system internals is strictly prohibited.</li>
+                </ul>
+
+                <h4>3. System Operations</h4>
+                <p>LibroTech reserves the right to suspend accounts that violate library policies or engage in suspicious activity.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('termsModal');
+        const termsLink = document.querySelector('.terms-link');
+        const closeBtn = document.querySelector('.close-modal');
+        const agreement = document.getElementById('agreement');
+        const registerBtn = document.getElementById('registerBtn');
+
+        // Toggle Register Button
+        agreement.addEventListener('change', function() {
+            registerBtn.disabled = !this.checked;
+        });
+
+        // Modal Open
+        termsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        });
+
+        // Modal Close
+        closeBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        });
+
+        window.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        });
+    </script>
 </body>
 
 </html>

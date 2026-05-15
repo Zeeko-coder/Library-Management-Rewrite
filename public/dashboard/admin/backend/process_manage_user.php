@@ -17,6 +17,7 @@ use PHPMailer\PHPMailer\Exception;
 
 $success_msg = "";
 $error_msg = "";
+$search = $_GET['search'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
@@ -25,8 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($action === 'delete') {
             try {
-                $delete_query = "DELETE FROM users WHERE user_id = ?";
-                $delete_stmt = $pdo->prepare($delete_query);
+                $delete_stmt = $pdo->prepare("DELETE FROM users WHERE user_id = ?");
                 $delete_stmt->execute([$user_id]);
                 $success_msg = "User account deleted successfully.";
             } catch (PDOException $e) {
@@ -61,13 +61,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $mail->isHTML(true);
 
                     if ($action === 'approve') {
-                        $new_role = $_POST['role'] ?? 'Student';
-                        $update_query = "UPDATE users SET approval_status = 'Approved', role = ? WHERE user_id = ?";
+                        $update_query = "UPDATE users SET approval_status = 'Approved' WHERE user_id = ?";
                         $update_stmt = $pdo->prepare($update_query);
-                        $update_stmt->execute([$new_role, $user_id]);
+                        $update_stmt->execute([$user_id]);
 
-                        $mail->Subject = 'Account Approved - LibroTech';
-                        $mail->Body    = "Hello $first_name,<br><br>Your account (User ID: <b>$user_id</b>, Username: <b>$user_name</b>) was approved by the administrator.<br>You can now login to the system.<br><br>Best regards,<br>LibroTech Administration";
+                        $mail->Body    = "Hello $first_name,<br><br>Your account (Username: <b>$user_name</b>) was approved by the administrator.<br>You can now login to the system.<br><br>Best regards,<br>LibroTech Administration";
 
                         $success_msg = "User approved and notified via email.";
                     } elseif ($action === 'reject') {
@@ -112,13 +110,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Fetch all users
-$query = "SELECT * FROM users ORDER BY created_at DESC";
-$stmt = $pdo->prepare($query);
-$stmt->execute();
-$all_users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-$pending_count = 0;
-foreach ($all_users as $u) {
-    if ($u['approval_status'] === 'Pending') $pending_count++;
+try {
+    $stmt = $pdo->query("SELECT * FROM users ORDER BY created_at DESC");
+    $raw_users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $raw_users = [];
 }
-?>
+
+$all_users = [];
+$pending_count = 0;
+
+foreach ($raw_users as $user) {
+    if ($user['approval_status'] === 'Pending') $pending_count++;
+
+    // Decrypt data for searching
+    $fname = decryptionData($user['first_name']);
+    $lname = decryptionData($user['last_name']);
+    $email = decryptionData($user['email']);
+    $username = decryptionData($user['username']);
+
+    $fullName = $fname . " " . $lname;
+
+    if (!empty($search)) {
+        $searchLower = strtolower($search);
+        $match = str_contains(strtolower($fullName), $searchLower) ||
+            str_contains(strtolower($email), $searchLower) ||
+            str_contains(strtolower($username), $searchLower);
+
+        if ($match) {
+            $all_users[] = $user;
+        }
+    } else {
+        $all_users[] = $user;
+    }
+}

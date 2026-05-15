@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Modals
     const viewModal = document.getElementById('viewBookModal');
     const editModal = document.getElementById('editBookModal');
@@ -26,7 +26,15 @@ document.addEventListener('DOMContentLoaded', function() {
             statusBadge.textContent = data.status;
             statusBadge.className = 'badge badge-' + data.status.toLowerCase().replace(' ', '-');
 
-            viewModal.style.display = 'block';
+            // Handle Image
+            const viewCover = document.getElementById('viewBookCover');
+            if (data.image) {
+                viewCover.innerHTML = `<img src="${data.image}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            } else {
+                viewCover.innerHTML = `<i class="fas fa-book"></i>`;
+            }
+
+            viewModal.style.display = 'flex';
         });
     });
 
@@ -43,9 +51,46 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('editCopies').value = data.copies;
             document.getElementById('editStatus').value = data.status;
 
-            editModal.style.display = 'block';
+            // Handle Image Preview
+            const editPreview = document.getElementById('editImagePreview');
+            if (data.image) {
+                editPreview.innerHTML = `<img src="${data.image}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            } else {
+                editPreview.innerHTML = `<i class="fas fa-book" style="color: var(--primary-color);"></i>`;
+            }
+
+            editModal.style.display = 'flex';
         });
     });
+
+    // Auto-update status when copies reach 0
+    const editCopiesInput = document.getElementById('editCopies');
+    const editStatusSelect = document.getElementById('editStatus');
+
+    if (editCopiesInput && editStatusSelect) {
+        editCopiesInput.addEventListener('input', function () {
+            if (parseInt(this.value) <= 0) {
+                editStatusSelect.value = 'Not Available';
+            }
+        });
+    }
+
+    // Live preview for image upload
+    const editBookImage = document.getElementById('editBookImage');
+    const editImagePreview = document.getElementById('editImagePreview');
+
+    if (editBookImage && editImagePreview) {
+        editBookImage.addEventListener('change', function () {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    editImagePreview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
 
     // Close Modals
     closeBtns.forEach(btn => {

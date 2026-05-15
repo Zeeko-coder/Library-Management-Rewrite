@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Modals
     const addModal = document.getElementById('addBookModal');
     const viewModal = document.getElementById('viewBookModal');
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const bookId = btn.dataset.id;
             const bookTitle = btn.dataset.title;
-            
+
             deleteTitle.textContent = bookTitle;
             deleteIdInput.value = bookId;
             deleteModal.style.display = 'block';
@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('viewCategory').textContent = data.category;
             document.getElementById('viewCopies').textContent = data.copies;
             document.getElementById('viewDate').textContent = data.date;
+            document.getElementById('viewImage').src = data.image;
 
             const statusBadge = document.getElementById('viewStatus');
             statusBadge.textContent = data.status;
@@ -70,6 +71,25 @@ document.addEventListener('DOMContentLoaded', function() {
             editModal.style.display = 'block';
         });
     });
+
+    // Auto-update status when copies reach 0
+    const addCopiesInput = document.querySelector('#addBookModal input[name="available_copies"]');
+    const addStatusSelect = document.querySelector('#addBookModal select[name="status"]');
+    const editCopiesInput = document.getElementById('editCopies');
+    const editStatusSelect = document.getElementById('editStatus');
+
+    const syncStatus = (input, select) => {
+        if (input && select) {
+            input.addEventListener('input', () => {
+                if (parseInt(input.value) <= 0) {
+                    select.value = 'Not Available';
+                }
+            });
+        }
+    };
+
+    syncStatus(addCopiesInput, addStatusSelect);
+    syncStatus(editCopiesInput, editStatusSelect);
 
     // Close Modals
     closeBtns.forEach(btn => {

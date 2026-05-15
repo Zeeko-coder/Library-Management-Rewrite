@@ -97,10 +97,26 @@
             }
             ?>
 
-            <button type="submit" class="register-btn">
+            <div class="agreement-group">
+                <label class="agreement-checkbox">
+                    <input type="checkbox" id="agreement" name="agreement">
+                    <span>I agree to the <a href="#" class="terms-link">Terms and Conditions</a> of LibroTech</span>
+                </label>
+                <div class="terms-summary">
+                    By checking this box, you agree to manage library resources professionally, adhere to administrative policies, and ensure accurate record-keeping of all circulation activities.
+                </div>
+            </div>
+
+            <button type="submit" class="register-btn" id="registerBtn" disabled>
                 <i class="fas fa-user-plus"></i> Register
             </button>
         </form>
+
+        <script>
+            document.getElementById('agreement').addEventListener('change', function() {
+                document.getElementById('registerBtn').disabled = !this.checked;
+            });
+        </script>
 
         <div class="login-link">
             <p>Already have an account? <a href="librarianLogin.php">Sign in</a></p>
@@ -114,6 +130,71 @@
         </div>
     </div>
 
+    <!-- Terms and Conditions Modal -->
+    <div id="termsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Terms and Conditions</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="terms-body">
+                <h4>1. Data Collection</h4>
+                <p>LibroTech collects professional and personal information (Name, Email, Phone, Credentials) to facilitate library administration. This data is used for:</p>
+                <ul>
+                    <li>Authorized access to the librarian dashboard.</li>
+                    <li>Managing book cataloging and circulation activities.</li>
+                    <li>Communicating with students regarding borrowing requests.</li>
+                </ul>
+                <p>All administrative data is protected with AES-256 encryption standards.</p>
+
+                <h4>2. Conditions of Use</h4>
+                <p>As a librarian, you agree to:</p>
+                <ul>
+                    <li>Maintain accurate and truthful records of library inventory.</li>
+                    <li>Process borrowing requests and returns promptly and fairly.</li>
+                    <li>Protect the privacy of students and their borrowing history.</li>
+                    <li>Use system administrative privileges only for authorized library business.</li>
+                    <li>Report any technical issues or security vulnerabilities immediately.</li>
+                </ul>
+
+                <h4>3. Administrative Responsibility</h4>
+                <p>Failure to adhere to library policies or misuse of the system may lead to administrative review and revocation of system access.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('termsModal');
+        const termsLink = document.querySelector('.terms-link');
+        const closeBtn = document.querySelector('.close-modal');
+        const agreement = document.getElementById('agreement');
+        const registerBtn = document.getElementById('registerBtn');
+
+        // Toggle Register Button
+        agreement.addEventListener('change', function() {
+            registerBtn.disabled = !this.checked;
+        });
+
+        // Modal Open
+        termsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        });
+
+        // Modal Close
+        closeBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        });
+
+        window.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        });
+    </script>
 </body>
 
 </html>

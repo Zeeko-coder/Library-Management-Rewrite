@@ -25,17 +25,19 @@ try {
 }
 
 try {
-    $transactions = $pdo->query("SELECT COUNT(*) FROM borrowings")->fetchColumn() ?: 0;
+    $librarian_count = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'Librarian' AND approval_status = 'Approved'")->fetchColumn() ?: 0;
 } catch (PDOException $e) {
-    $transactions = 0;
+    $librarian_count = 0;
 }
-
 
 try {
-    $overdue_books = $pdo->query("SELECT COUNT(*) FROM borrowings WHERE status = 'Overdue'")->fetchColumn() ?: 0;
+    $student_count = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'Student' AND approval_status = 'Approved'")->fetchColumn() ?: 0;
 } catch (PDOException $e) {
-    $overdue_books = 0;
+    $student_count = 0;
 }
+
+
+
 
 
 // Pending Approvals

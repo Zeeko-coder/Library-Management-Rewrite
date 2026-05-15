@@ -62,11 +62,7 @@ require_once __DIR__ . '/../backend/process_circulation.php';
     <main class="main-content">
         <!-- Top Header -->
         <header class="top-header animate-fade">
-            <div class="header-search">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search transactions, student IDs, or book titles...">
-            </div>
-            <div class="header-user">
+            <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name"><?php echo $_SESSION['username'] ?? 'System Admin'; ?></span>
                     <span class="user-role">Administrator</span>
@@ -93,87 +89,107 @@ require_once __DIR__ . '/../backend/process_circulation.php';
                 </div>
             </div>
 
+
             <!-- Circulation Stats -->
             <div class="circ-stats animate-up delay-2">
+                <div class="circ-stat-card" style="border-left-color: #f59e0b;">
+                    <h4>Pending</h4>
+                    <div class="value"><?php echo number_format($pending_count); ?></div>
+                </div>
                 <div class="circ-stat-card" style="border-left-color: #3b82f6;">
-                    <h4>Active Borrows</h4>
+                    <h4>Active</h4>
                     <div class="value"><?php echo number_format($active_borrows); ?></div>
                 </div>
-                <div class="circ-stat-card" style="border-left-color: #f59e0b;">
-                    <h4>Due Today</h4>
-                    <div class="value"><?php echo number_format($due_today); ?></div>
-                </div>
                 <div class="circ-stat-card" style="border-left-color: #ef4444;">
-                    <h4>Overdue books</h4>
+                    <h4>Overdue</h4>
                     <div class="value"><?php echo number_format($overdue_books); ?></div>
                 </div>
                 <div class="circ-stat-card" style="border-left-color: #10b981;">
-                    <h4>Returns (Today)</h4>
-                    <div class="value"><?php echo number_format($returns_today); ?></div>
+                    <h4>Returned</h4>
+                    <div class="value"><?php echo number_format($returned_total); ?></div>
+                </div>
+                <div class="circ-stat-card" style="border-left-color: #64748b;">
+                    <h4>Rejected</h4>
+                    <div class="value"><?php echo number_format($rejected_count); ?></div>
                 </div>
             </div>
 
-            <!-- Transaction Table -->
+            <!-- Borrowing Records Table -->
             <div class="table-container animate-up delay-3">
                 <div style="padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="font-size: 16px;">Current Transactions</h3>
+                    <h3 style="font-size: 16px;">Circulation Records</h3>
                     <div style="display: flex; gap: 10px;">
-                        <select style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 13px;">
-                            <option>Filter by Status</option>
-                            <option>Active</option>
-                            <option>Overdue</option>
-                            <option>Returned</option>
+                        <div style="position: relative;">
+                            <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-lighter); font-size: 12px;"></i>
+                            <input type="text" id="nameSearch" placeholder="Search by name or ID..." style="padding: 6px 12px 6px 30px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 13px; outline: none; width: 220px; transition: var(--transition);">
+                        </div>
+                        <select id="statusFilter" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 13px; cursor: pointer; outline: none; background: white;">
+                            <option value="all">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="borrowed">Active</option>
+                            <option value="overdue">Overdue</option>
+                            <option value="returned">Returned</option>
+                            <option value="rejected">Rejected</option>
                         </select>
                     </div>
                 </div>
-                <table class="circ-table">
-                    <thead>
-                        <tr>
-                            <th>Book Title</th>
-                            <th>Borrower</th>
-                            <th>Issue Date</th>
-                            <th>Due Date</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($recent_transactions)): ?>
+                <div class="table-wrapper" style="max-height: calc(100vh - 300px); overflow-y: auto;">
+                    <table class="circ-table">
+                        <thead>
                             <tr>
-                                <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-lighter);">
-                                    No recent transactions found in the database.
-                                </td>
+                                <th>Book Title</th>
+                                <th>Borrower</th>
+                                <th>Issue Date</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
                             </tr>
-                        <?php else: ?>
-                            <?php foreach ($recent_transactions as $tx):
-                                $name = decryptionData($tx['first_name']) . " " . decryptionData($tx['last_name']);
-                                $status = ucfirst($tx['status']);
-                                $status_class = strtolower($tx['status']);
-                                $is_overdue = (strtotime($tx['due_date']) < time() && $tx['status'] === 'borrowed');
-                                if ($is_overdue) {
-                                    $status = "Overdue";
-                                    $status_class = "overdue";
-                                }
-                            ?>
-                                <tr>
-                                    <td><strong><?php echo htmlspecialchars($tx['title']); ?></strong></td>
-                                    <td><?php echo $name; ?></td>
-                                    <td><?php echo date('M d, h:i A', strtotime($tx['borrow_date'])); ?></td>
-                                    <td>
-                                        <span class="due-date <?php echo $is_overdue ? 'due-danger' : ''; ?>" style="font-size: 13px;">
-                                            <?php echo date('M d, Y', strtotime($tx['due_date'])); ?><br>
-                                            <small style="opacity: 0.7;"><?php echo date('h:i A', strtotime($tx['due_date'])); ?></small>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="status-indicator status-<?php echo $status_class; ?>">
-                                            <div class="indicator-dot"></div> <?php echo $status; ?>
-                                        </div>
+                        </thead>
+                        <tbody id="circTableBody">
+                            <?php if (empty($recent_transactions)): ?>
+                                <tr class="empty-row">
+                                    <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-lighter);">
+                                        No recent circulation records found.
                                     </td>
                                 </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                            <?php else: ?>
+                                <?php foreach ($recent_transactions as $tx):
+                                    $name = decryptionData($tx['first_name']) . " " . decryptionData($tx['last_name']);
+                                    $raw_status = strtolower($tx['status']);
+                                    $display_status = ucfirst($raw_status);
+                                    $is_overdue = (strtotime($tx['due_date']) < time() && $raw_status === 'borrowed');
+
+                                    $final_status = $raw_status;
+                                    if ($is_overdue) {
+                                        $final_status = "overdue";
+                                        $display_status = "Overdue";
+                                    }
+                                ?>
+                                    <tr class="transaction-row" data-status="<?php echo $final_status; ?>">
+                                        <td><strong><?php echo htmlspecialchars($tx['title']); ?></strong></td>
+                                        <td><strong><?php echo $name; ?></strong><br><small style="color: var(--text-lighter);">ID: <?php echo htmlspecialchars($tx['user_id']); ?></small></td>
+                                        <td><?php echo date('M d, h:i A', strtotime($tx['borrow_date'])); ?></td>
+                                        <td>
+                                            <span class="due-date <?php echo $is_overdue ? 'due-danger' : ''; ?>" style="font-size: 13px;">
+                                                <?php echo date('M d, Y', strtotime($tx['due_date'])); ?><br>
+                                                <small style="opacity: 0.7;"><?php echo date('h:i A', strtotime($tx['due_date'])); ?></small>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="status-indicator status-<?php echo $final_status; ?>">
+                                                <div class="indicator-dot"></div> <?php echo $display_status; ?>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                <tr id="emptyFilterRow" style="display: none;">
+                                    <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-lighter);">
+                                        No records found matching this status.
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </main>
@@ -201,13 +217,39 @@ require_once __DIR__ . '/../backend/process_circulation.php';
     <script src="../../../../src/js/dashboard.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const closeBtns = document.querySelectorAll('.close-modal');
+            const statusFilter = document.getElementById('statusFilter');
+            const rows = document.querySelectorAll('.transaction-row');
+            const emptyFilterRow = document.getElementById('emptyFilterRow');
 
-            closeBtns.forEach(btn => {
-                btn.onclick = () => {
-                    // Logic for any remaining modals if any
-                }
-            });
+            if (statusFilter && nameSearch) {
+                const filterRecords = () => {
+                    const filterValue = statusFilter.value;
+                    const searchTerm = nameSearch.value.toLowerCase();
+                    let visibleCount = 0;
+
+                    rows.forEach(row => {
+                        const status = row.getAttribute('data-status');
+                        const text = row.innerText.toLowerCase();
+
+                        const statusMatch = (filterValue === 'all' || status === filterValue);
+                        const nameMatch = text.includes(searchTerm);
+
+                        if (statusMatch && nameMatch) {
+                            row.style.display = 'table-row';
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+
+                    if (emptyFilterRow) {
+                        emptyFilterRow.style.display = (visibleCount === 0) ? 'table-row' : 'none';
+                    }
+                };
+
+                statusFilter.addEventListener('change', filterRecords);
+                nameSearch.addEventListener('input', filterRecords);
+            }
 
             // Auto-hide alerts after 5 seconds
             const alerts = document.querySelectorAll('.alert');

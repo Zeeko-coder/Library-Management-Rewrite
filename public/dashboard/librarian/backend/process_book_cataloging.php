@@ -50,11 +50,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_book'])) {
     $author = $_POST['author'];
     $category = $_POST['category'];
     $available_copies = (int)$_POST['available_copies'];
-    $status = $_POST['status'];
+    $status = ($available_copies <= 0) ? 'Not Available' : $_POST['status'];
+    
+    // Image handling
+    $book_image = null;
+    if (isset($_FILES['book_image']) && $_FILES['book_image']['error'] === 0) {
+        $upload_dir = __DIR__ . '/../../../../uploads/books/';
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0777, true);
+        }
+        
+        $file_ext = strtolower(pathinfo($_FILES['book_image']['name'], PATHINFO_EXTENSION));
+        $allowed_extensions = ['jpg', 'jpeg', 'png', 'webp'];
+        
+        if (in_array($file_ext, $allowed_extensions)) {
+            $new_filename = 'book_' . $book_id . '_' . time() . '.' . $file_ext;
+            $upload_path = $upload_dir . $new_filename;
+            
+            if (move_uploaded_file($_FILES['book_image']['tmp_name'], $upload_path)) {
+                $book_image = 'uploads/books/' . $new_filename;
+                
+                // Delete old image if it exists
+                try {
+                    $old_stmt = $pdo->prepare("SELECT book_image FROM books WHERE book_id = ?");
+                    $old_stmt->execute([$book_id]);
+                    $old_image = $old_stmt->fetchColumn();
+                    if ($old_image && file_exists(__DIR__ . '/../../../../' . $old_image)) {
+                        unlink(__DIR__ . '/../../../../' . $old_image);
+                    }
+                } catch (PDOException $e) {}
+            }
+        }
+    }
 
     try {
-        $stmt = $pdo->prepare("UPDATE books SET title = ?, author = ?, category = ?, available_copies = ?, status = ? WHERE book_id = ?");
-        $stmt->execute([$title, $author, $category, $available_copies, $status, $book_id]);
+        if ($book_image) {
+            $stmt = $pdo->prepare("UPDATE books SET title = ?, author = ?, category = ?, available_copies = ?, status = ?, book_image = ? WHERE book_id = ?");
+            $stmt->execute([$title, $author, $category, $available_copies, $status, $book_image, $book_id]);
+        } else {
+            $stmt = $pdo->prepare("UPDATE books SET title = ?, author = ?, category = ?, available_copies = ?, status = ? WHERE book_id = ?");
+            $stmt->execute([$title, $author, $category, $available_copies, $status, $book_id]);
+        }
         $_SESSION['success_message'] = "Book updated successfully!";
         header("Location: book_cataloging.php");
         exit();
@@ -62,4 +98,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_book'])) {
         $_SESSION['error_message'] = "Error updating book: " . $e->getMessage();
     }
 }
-?>

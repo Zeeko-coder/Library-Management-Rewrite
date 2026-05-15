@@ -61,11 +61,7 @@ require_once __DIR__ . '/../backend/process_manage_books.php';
     <main class="main-content">
         <!-- Top Header -->
         <header class="top-header animate-fade">
-            <div class="header-search">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Global search for books or users...">
-            </div>
-            <div class="header-user">
+            <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name"><?php echo $_SESSION['username'] ?? 'System Admin'; ?></span>
                     <span class="user-role">Administrator</span>
@@ -146,13 +142,20 @@ require_once __DIR__ . '/../backend/process_manage_books.php';
                             </tr>
                         <?php else: ?>
                             <?php foreach ($all_books as $book):
-                                $status = $book['status'] ?? 'Available';
+                                $copies = (int)$book['available_copies'];
+                                $status = ($copies <= 0) ? 'Not Available' : ($book['status'] ?? 'Available');
                                 $badge_class = strtolower(str_replace(' ', '-', $status));
                             ?>
                                 <tr>
                                     <td>
                                         <div class="book-info">
-                                            <div class="book-cover-mini"><i class="fas fa-book"></i></div>
+                                            <div class="book-cover-mini">
+                                                <?php if (!empty($book['book_image'])): ?>
+                                                    <img src="../../../../<?php echo htmlspecialchars($book['book_image']); ?>" alt="Book Cover" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                                                <?php else: ?>
+                                                    <img src="../../../../img/book_placeholder.png" alt="Book Cover" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                                                <?php endif; ?>
+                                            </div>
                                             <div>
                                                 <span class="book-title"><?php echo htmlspecialchars($book['title']); ?></span>
                                                 <span class="book-isbn">ID: <?php echo $book['book_id']; ?></span>
@@ -171,7 +174,8 @@ require_once __DIR__ . '/../backend/process_manage_books.php';
                                                 data-author="<?php echo htmlspecialchars($book['author']); ?>"
                                                 data-category="<?php echo htmlspecialchars($book['category']); ?>"
                                                 data-copies="<?php echo $book['available_copies']; ?>"
-                                                data-status="<?php echo $book['status']; ?>"
+                                                data-status="<?php echo $status; ?>"
+                                                data-image="<?php echo !empty($book['book_image']) ? '../../../../' . $book['book_image'] : '../../../../img/book_placeholder.png'; ?>"
                                                 data-date="<?php echo date('M d, Y', strtotime($book['created_at'])); ?>">
                                                 <i class="fas fa-eye"></i>
                                             </a>
@@ -181,7 +185,7 @@ require_once __DIR__ . '/../backend/process_manage_books.php';
                                                 data-author="<?php echo htmlspecialchars($book['author']); ?>"
                                                 data-category="<?php echo htmlspecialchars($book['category']); ?>"
                                                 data-copies="<?php echo $book['available_copies']; ?>"
-                                                data-status="<?php echo $book['status']; ?>">
+                                                data-status="<?php echo $status; ?>">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <a href="#" class="action-btn btn-delete" title="Delete Book"
@@ -207,7 +211,11 @@ require_once __DIR__ . '/../backend/process_manage_books.php';
                 <h2>Add New Book</h2>
                 <span class="close-modal">&times;</span>
             </div>
-            <form action="manage_books.php" method="POST" class="modal-form">
+            <form action="manage_books.php" method="POST" class="modal-form" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Book Cover Image</label>
+                    <input type="file" name="book_image" accept="image/*" class="form-control" style="padding: 5px;">
+                </div>
                 <div class="form-group">
                     <label>Book Title</label>
                     <input type="text" name="title" required placeholder="Enter book title">
@@ -223,7 +231,7 @@ require_once __DIR__ . '/../backend/process_manage_books.php';
                 <div class="form-row">
                     <div class="form-group">
                         <label>Available Copies</label>
-                        <input type="number" name="available_copies" required min="1" value="1">
+                        <input type="number" name="available_copies" required min="0" value="1">
                     </div>
                     <div class="form-group">
                         <label>Status</label>
@@ -249,8 +257,8 @@ require_once __DIR__ . '/../backend/process_manage_books.php';
             </div>
             <div class="modal-body" style="padding: 25px;">
                 <div style="display: flex; gap: 30px; margin-bottom: 25px;">
-                    <div style="width: 120px; height: 160px; background: #f1f5f9; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 50px; color: var(--primary-color);">
-                        <i class="fas fa-book"></i>
+                    <div style="width: 120px; height: 160px; background: #f1f5f9; border-radius: 12px; overflow: hidden;">
+                        <img src="../../../../img/book_placeholder.png" alt="Book Cover" id="viewImage" style="width: 100%; height: 100%; object-fit: cover;">
                     </div>
                     <div style="flex: 1;">
                         <h3 id="viewTitle" style="font-size: 20px; margin-bottom: 5px;">Book Title</h3>
@@ -289,8 +297,12 @@ require_once __DIR__ . '/../backend/process_manage_books.php';
                 <h2>Edit Book</h2>
                 <span class="close-modal">&times;</span>
             </div>
-            <form action="manage_books.php" method="POST" class="modal-form">
+            <form action="manage_books.php" method="POST" class="modal-form" enctype="multipart/form-data">
                 <input type="hidden" name="book_id" id="editBookID">
+                <div class="form-group">
+                    <label>Change Book Cover Image</label>
+                    <input type="file" name="book_image" accept="image/*" class="form-control" style="padding: 5px;">
+                </div>
                 <div class="form-group">
                     <label>Book Title</label>
                     <input type="text" name="title" id="editTitle" required placeholder="Enter book title">
@@ -306,7 +318,7 @@ require_once __DIR__ . '/../backend/process_manage_books.php';
                 <div class="form-row">
                     <div class="form-group">
                         <label>Available Copies</label>
-                        <input type="number" name="available_copies" id="editCopies" required min="1">
+                        <input type="number" name="available_copies" id="editCopies" required min="0">
                     </div>
                     <div class="form-group">
                         <label>Status</label>
@@ -352,4 +364,5 @@ require_once __DIR__ . '/../backend/process_manage_books.php';
     <script src="../../../../src/js/dashboard.js"></script>
     <script src="../src/js/manage_books.js"></script>
 </body>
-</html>
+
+</html>

@@ -6,7 +6,7 @@ require_once '../config/smtp_config.php';
 require_once '../vendor/autoload.php';
 include '../database/db_connection.php';
 require_once '../helpers/cryptography_process.php';
-require_once '../api/twilio.php';
+
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -101,18 +101,6 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
             }
         } else if ($otpMethod === "sms") {
             $phoneNumber = decryptionData($user['phone_number']);
-            
-            if (sendOTPviaSMS($phoneNumber, $otpCode)) {
-                header("Location: ../public/otp_verification.php");
-                exit();
-            } else {
-                // If the error isn't already set by the Twilio function, set a generic one
-                if (!isset($_SESSION['error'])) {
-                    $_SESSION['error'] = "Failed to send SMS OTP via Twilio. Please try again or use another method.";
-                }
-                header("Location: ../public/librarianLogin.php");
-                exit();
-            }
         }
     } else {
         $_SESSION['error'] = "Invalid username or password.";

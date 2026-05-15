@@ -1,53 +1,66 @@
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const filter = btn.getAttribute('data-filter');
-            if (!filter) return; // Skip if it's the badge-only part or something
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('tableSearchInput');
+    const tabs = document.querySelectorAll('.tab-btn');
+    const rows = document.querySelectorAll('.user-row');
+    const emptyRow = document.getElementById('emptyStateRow');
+    const emptyMsg = document.getElementById('emptyStateMessage');
 
-            // Update active tab
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+    function filterUsers() {
+        const activeTab = document.querySelector('.tab-btn.active');
+        const filter = activeTab ? activeTab.getAttribute('data-filter') : 'all';
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        let visibleCount = 0;
 
-            // Filter rows
-            let visibleCount = 0;
-            const rows = document.querySelectorAll('.user-row');
-            const emptyRow = document.getElementById('emptyStateRow');
-            const emptyMsg = document.getElementById('emptyStateMessage');
+        rows.forEach(row => {
+            const role = row.getAttribute('data-role');
+            const status = row.getAttribute('data-status');
+            const name = row.querySelector('.user-name').textContent.toLowerCase();
+            const email = row.querySelector('.user-email').textContent.toLowerCase();
 
-            rows.forEach(row => {
-                const role = row.getAttribute('data-role');
-                const status = row.getAttribute('data-status');
-                let isVisible = false;
+            let tabVisible = false;
+            if (filter === 'all') {
+                tabVisible = true;
+            } else if (filter === 'Pending') {
+                tabVisible = (status === 'Pending');
+            } else if (filter === 'Librarian' || filter === 'Student') {
+                tabVisible = (role === filter && status === 'Approved');
+            }
 
-                if (filter === 'all') {
-                    isVisible = true;
-                } else if (filter === 'Pending') {
-                    isVisible = (status === 'Pending');
-                } else if (filter === 'Librarian' || filter === 'Student') {
-                    isVisible = (role === filter && status === 'Approved');
-                }
+            const searchVisible = name.includes(searchTerm) || email.includes(searchTerm);
 
-                if (isVisible) {
-                    row.style.display = 'table-row';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-
-            // Handle empty state
-            if (visibleCount === 0) {
-                emptyRow.style.display = 'table-row';
-                if (filter === 'Pending') {
-                    emptyMsg.textContent = "No pending request found";
-                } else {
-                    emptyMsg.textContent = "No " + filter.toLowerCase() + "s found in the database.";
-                }
+            if (tabVisible && searchVisible) {
+                row.style.display = 'table-row';
+                visibleCount++;
             } else {
-                emptyRow.style.display = 'none';
+                row.style.display = 'none';
             }
         });
+
+        // Handle empty state
+        if (visibleCount === 0) {
+            emptyRow.style.display = 'table-row';
+            if (searchTerm) {
+                emptyMsg.textContent = `No users found matching "${searchTerm}"`;
+            } else if (filter === 'Pending') {
+                emptyMsg.textContent = "No pending request found";
+            } else {
+                emptyMsg.textContent = "No " + filter.toLowerCase() + "s found in the database.";
+            }
+        } else {
+            emptyRow.style.display = 'none';
+        }
+    }
+
+    // Tabs only filter the currently visible/loaded results
+    tabs.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabs.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            filterUsers();
+        });
     });
+
+    // Note: Search is now handled via server-side GET request (form submission)
 
     // Delete User Modal Logic
     const deleteModal = document.getElementById('deleteUserModal');
@@ -61,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (btn) {
             const id = btn.getAttribute('data-id');
             const name = btn.getAttribute('data-name');
-            
+
             deleteName.textContent = name;
             deleteIdInput.value = id;
             deleteModal.style.display = 'block';

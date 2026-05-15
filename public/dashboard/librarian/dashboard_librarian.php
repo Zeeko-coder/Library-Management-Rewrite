@@ -174,11 +174,7 @@ function getTimeAgo($timestamp)
     <main class="main-content">
         <!-- Top Header -->
         <header class="top-header animate-fade">
-            <div class="header-search">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search for books or records...">
-            </div>
-            <div class="header-user">
+            <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name"><?php echo $_SESSION['username'] ?? 'Librarian'; ?></span>
                     <span class="user-role">Librarian</span>
@@ -253,7 +249,7 @@ function getTimeAgo($timestamp)
                         <?php else: ?>
                             <?php foreach ($recent_activities as $activity): ?>
                                 <div class="activity-item">
-                                    <?php if ($activity['type'] === 'circulation'): 
+                                    <?php if ($activity['type'] === 'circulation'):
                                         $is_return = !is_null($activity['return_date']);
                                         $student_name = decryptionData($activity['first_name']) . " " . decryptionData($activity['last_name']);
                                     ?>
@@ -268,7 +264,7 @@ function getTimeAgo($timestamp)
                                             <span class="activity-title"><?php echo $is_return ? 'Return' : 'Borrow'; ?>: <?php echo htmlspecialchars($activity['title']); ?></span>
                                             <span class="activity-desc"><?php echo $is_return ? 'Returned' : 'Borrowed'; ?> by <strong><?php echo $student_name; ?></strong></span>
                                         </div>
-                                    <?php else: 
+                                    <?php else:
                                         $admin_display = decryptionData($activity['first_name']) . " " . decryptionData($activity['last_name']);
                                         if (empty(trim($admin_display))) {
                                             $admin_display = $activity['admin_role'] ?: 'Administrator';

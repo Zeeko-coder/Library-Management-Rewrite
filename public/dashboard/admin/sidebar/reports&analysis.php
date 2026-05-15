@@ -13,6 +13,7 @@ require_once __DIR__ . '/../backend/process_reports&analysis.php';
     <link rel="stylesheet" href="../../../../src/css/styles.css">
     <link rel="stylesheet" href="../../../../src/css/dashboard.css">
     <link rel="stylesheet" href="../src/css/reports&analysis.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body class="dashboard-body">
@@ -61,11 +62,7 @@ require_once __DIR__ . '/../backend/process_reports&analysis.php';
     <main class="main-content">
         <!-- Top Header -->
         <header class="top-header animate-fade">
-            <div class="header-search">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Global search for analytics...">
-            </div>
-            <div class="header-user">
+            <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name"><?php echo $_SESSION['username'] ?? 'System Admin'; ?></span>
                     <span class="user-role">Administrator</span>
@@ -92,76 +89,106 @@ require_once __DIR__ . '/../backend/process_reports&analysis.php';
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <div class="export-btn btn-pdf" onclick="window.print()"><i class="fas fa-file-pdf"></i> PDF Report</div>
-                    <div class="export-btn btn-excel" id="exportExcel"><i class="fas fa-file-excel"></i> Excel Data</div>
                 </div>
             </div>
 
-            <!-- Report Controls -->
-            <div class="report-controls animate-up delay-2">
-                <div style="display: flex; gap: 15px; align-items: center;">
-                    <span style="font-size: 14px; font-weight: 600;">Time Period:</span>
-                    <select style="padding: 8px 15px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 13px;">
-                        <option>Last 30 Days</option>
-                        <option>This Semester</option>
-                        <option>Last Year</option>
-                        <option>Custom Range</option>
-                    </select>
+
+            <!-- Summary Cards -->
+            <div class="stats-summary animate-up delay-2">
+                <div class="summary-card">
+                    <div class="summary-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 12px; color: var(--text-lighter); margin-bottom: 2px;">Total Borrows</h4>
+                        <span style="font-size: 20px; font-weight: 700;"><?php echo number_format($total_borrows); ?></span>
+                    </div>
                 </div>
-                <div style="color: var(--text-lighter); font-size: 13px;">
-                    Last updated: <strong><?php echo date('H:i, M d, Y'); ?></strong>
+                <div class="summary-card">
+                    <div class="summary-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 12px; color: var(--text-lighter); margin-bottom: 2px;">Returned</h4>
+                        <span style="font-size: 20px; font-weight: 700;"><?php echo number_format($returned_books); ?></span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 12px; color: var(--text-lighter); margin-bottom: 2px;">Pending</h4>
+                        <span style="font-size: 20px; font-weight: 700;"><?php echo number_format($pending_count); ?></span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 12px; color: var(--text-lighter); margin-bottom: 2px;">Overdue</h4>
+                        <span style="font-size: 20px; font-weight: 700;"><?php echo number_format($overdue_count); ?></span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Analytics Content (Adjusted Layout) -->
-            <div class="analytics-row">
-                <!-- Left: Category Distribution -->
+            <!-- Charts Grid -->
+            <div class="analytics-grid">
+                <!-- Status Distribution Chart -->
                 <div class="data-card animate-up delay-3">
                     <div class="card-header">
-                        <h2>Category Distribution</h2>
-                        <i class="fas fa-info-circle" style="color: var(--text-lighter);"></i>
+                        <h2>Circulation Status</h2>
+                        <i class="fas fa-chart-pie" style="color: var(--text-lighter);"></i>
                     </div>
-                    <div style="padding: 10px 0;">
-                        <?php if (empty($category_data)): ?>
-                            <p style="text-align: center; color: var(--text-lighter); padding: 20px;">No borrowing data available yet.</p>
-                        <?php else: ?>
-                            <?php
-                            $colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
-                            $i = 0;
-                            foreach ($category_data as $cat):
-                                $percentage = ($total_borrows > 0) ? round(($cat['count'] / $total_borrows) * 100) : 0;
-                                $color = $colors[$i % count($colors)];
-                                $i++;
-                            ?>
-                                <div class="progress-stat-item">
-                                    <div class="progress-stat-info">
-                                        <span><?php echo htmlspecialchars($cat['category']); ?></span>
-                                        <span><?php echo $percentage; ?>% (<?php echo $cat['count']; ?> Borrows)</span>
-                                    </div>
-                                    <div class="progress-bar-bg">
-                                        <div class="progress-bar-fill" style="width: <?php echo $percentage; ?>%; background: <?php echo $color; ?>;"></div>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                    <div class="chart-container">
+                        <canvas id="statusChart"></canvas>
                     </div>
                 </div>
 
-                <!-- Right: Most Popular Books -->
+                <!-- Category Trends Chart -->
                 <div class="data-card animate-up delay-4">
                     <div class="card-header">
-                        <h2>Top Rated Titles</h2>
+                        <h2>Top Categories</h2>
+                        <i class="fas fa-chart-bar" style="color: var(--text-lighter);"></i>
                     </div>
-                    <div class="ranking-list">
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Activity Trend Chart -->
+                <div class="data-card animate-up delay-5" style="grid-column: span 2;">
+                    <div class="card-header">
+                        <h2>Borrowing Trends (Last 7 Days)</h2>
+                        <i class="fas fa-chart-line" style="color: var(--text-lighter);"></i>
+                    </div>
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Most Popular Books (Kept as list for variety) -->
+                <div class="data-card animate-up delay-6" style="grid-column: span 2;">
+                    <div class="card-header">
+                        <h2>Top Borrowed Titles</h2>
+                        <i class="fas fa-star" style="color: #f59e0b;"></i>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; padding: 10px 0;">
                         <?php if (empty($top_books)): ?>
                             <p style="text-align: center; color: var(--text-lighter); padding: 20px;">No books borrowed yet.</p>
                         <?php else: ?>
-                            <?php $rank = 1;
-                            foreach ($top_books as $book): ?>
-                                <div class="ranking-item">
-                                    <div class="rank-number" <?php echo $rank > 3 ? 'style="background: #e2e8f0; color: #64748b;"' : ''; ?>><?php echo $rank++; ?></div>
+                            <?php foreach ($top_books as $book): ?>
+                                <div class="ranking-item" style="border: 1px solid var(--border-color); padding: 15px; border-radius: 12px;">
                                     <div class="rank-details">
-                                        <h5><?php echo htmlspecialchars($book['title']); ?></h5>
-                                        <span><?php echo $book['borrow_count']; ?> Total Borrows</span>
+                                        <h5 style="font-size: 14px; margin-bottom: 4px;"><?php echo htmlspecialchars($book['title']); ?></h5>
+                                        <p style="font-size: 12px; color: var(--text-lighter); margin-bottom: 8px;">By <?php echo htmlspecialchars($book['author']); ?></p>
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="height: 6px; flex: 1; background: #f1f5f9; border-radius: 3px;">
+                                                <div style="height: 100%; width: <?php echo ($total_borrows > 0) ? ($book['borrow_count'] / $total_borrows * 100) : 0; ?>%; background: var(--primary-color); border-radius: 3px;"></div>
+                                            </div>
+                                            <span style="font-size: 12px; font-weight: 600;"><?php echo $book['borrow_count']; ?> Borrows</span>
+                                        </div>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -172,17 +199,90 @@ require_once __DIR__ . '/../backend/process_reports&analysis.php';
         </div>
     </main>
 
-    <script src="../../../../src/js/dashboard.js"></script>
     <script>
         const categoryData = <?php echo json_encode($category_data); ?>;
-        const topBooks = <?php echo json_encode($top_books); ?>;
+        const trendData = <?php echo json_encode($trend_data); ?>;
+        const statusDist = <?php echo json_encode($status_dist); ?>;
         const totalBorrows = <?php echo (int)$total_borrows; ?>;
-        const reportDate = "<?php echo date('Y-m-d H:i'); ?>";
-        const reportFileNameDate = "<?php echo date('Y-m-d'); ?>";
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Status Distribution Chart (Donut)
+            const ctxStatus = document.getElementById('statusChart').getContext('2d');
+            new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(statusDist).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+                    datasets: [{
+                        data: Object.values(statusDist),
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#64748b'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // 2. Category Distribution Chart (Bar)
+            const ctxCategory = document.getElementById('categoryChart').getContext('2d');
+            new Chart(ctxCategory, {
+                type: 'bar',
+                data: {
+                    labels: categoryData.map(c => c.category),
+                    datasets: [{
+                        label: 'Borrows',
+                        data: categoryData.map(c => c.count),
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { display: false } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // 3. Borrowing Trends Chart (Line)
+            const ctxTrend = document.getElementById('trendChart').getContext('2d');
+            new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: trendData.map(t => new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+                    datasets: [{
+                        label: 'Daily Activity',
+                        data: trendData.map(t => t.count),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#3b82f6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        });
     </script>
     <script src="../../../../src/js/dashboard.js"></script>
     <script src="../src/js/reports&analysis.js"></script>
 </body>
-</html>
-
-</html>
+</html>

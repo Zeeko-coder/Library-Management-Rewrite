@@ -95,8 +95,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Update stock: add back the difference (if librarian reduced it)
                     // or subtract more (if librarian increased it - though UI should limit this)
                     $diff = $original_quantity - $new_quantity;
-                    $update_stock = $pdo->prepare("UPDATE books SET available_copies = available_copies + ? WHERE book_id = ?");
-                    $update_stock->execute([$diff, $book_id]);
+                    $update_stock = $pdo->prepare("UPDATE books SET 
+                        available_copies = available_copies + ?,
+                        status = CASE WHEN (available_copies + ?) <= 0 THEN 'Not Available' ELSE 'Available' END
+                        WHERE book_id = ?");
+                    $update_stock->execute([$diff, $diff, $book_id]);
 
                     $stmt = $pdo->prepare("UPDATE borrowings SET status = 'borrowed', borrow_date = NOW(), due_date = ?, quantity = ? WHERE id = ?");
                     $stmt->execute([$due_date, $new_quantity, $borrow_id]);
@@ -108,8 +111,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $mail->send();
                 } elseif ($action === 'reject_request') {
                     // Return stock on rejection
-                    $update_stock = $pdo->prepare("UPDATE books SET available_copies = available_copies + ? WHERE book_id = ?");
-                    $update_stock->execute([$quantity, $book_id]);
+                    $update_stock = $pdo->prepare("UPDATE books SET 
+                        available_copies = available_copies + ?,
+                        status = CASE WHEN (available_copies + ?) <= 0 THEN 'Not Available' ELSE 'Available' END
+                        WHERE book_id = ?");
+                    $update_stock->execute([$quantity, $quantity, $book_id]);
 
                     $stmt = $pdo->prepare("UPDATE borrowings SET status = 'rejected' WHERE id = ?");
                     $stmt->execute([$borrow_id]);
@@ -190,14 +196,15 @@ try {
         FROM borrowings b
         JOIN books bk ON b.book_id = bk.book_id
         JOIN users u ON b.user_id = u.user_id
-        WHERE (b.status = 'overdue') OR (b.status = 'borrowed' AND b.due_date < CURRENT_DATE)
+        WHERE (b.status = 'overdue') OR (b.status = 'borrowed' AND b.due_date < NOW())
         ORDER BY b.due_date ASC
     ");
+    $overdue_stmt->execute(); // Added missing execute()
     $overdue_list = $overdue_stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
     // 4. Returned Books
     $returned_stmt = $pdo->prepare("
-        SELECT b.*, bk.title, u.first_name, u.last_name, u.email, u.user_id as student_id
+        SELECT b.*, bk.title, u.first_name, u.last_name, u.email, u.user_id
         FROM borrowings b
         JOIN books bk ON b.book_id = bk.book_id
         JOIN users u ON b.user_id = u.user_id
@@ -207,13 +214,13 @@ try {
     $returned_stmt->execute();
     $returned_list = $returned_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // 5. Active Borrow Students
+    // 5. Active Borrow Students (Exclude Overdue)
     $active_stmt = $pdo->prepare("
-        SELECT b.*, bk.title, bk.author, u.first_name, u.last_name, u.email, u.user_id as student_id
+        SELECT b.*, bk.title, bk.author, u.first_name, u.last_name, u.email, u.user_id
         FROM borrowings b
         JOIN books bk ON b.book_id = bk.book_id
         JOIN users u ON b.user_id = u.user_id
-        WHERE b.status = 'borrowed'
+        WHERE b.status = 'borrowed' AND b.due_date >= NOW()
         ORDER BY b.borrow_date DESC
     ");
     $active_stmt->execute();
@@ -247,4 +254,3 @@ try {
     $all_students = $borrow_requests = $overdue_list = $returned_list = $active_borrow_list = [];
     $new_request_count = $new_overdue_count = $new_active_count = $new_returned_count = 0;
 }
-?>

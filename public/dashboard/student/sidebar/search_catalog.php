@@ -59,11 +59,7 @@ require_once __DIR__ . '/../backend/process_search_catalog.php';
     <!-- Main Content -->
     <main class="main-content">
         <header class="top-header animate-fade">
-            <div class="header-search">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Global search for books...">
-            </div>
-            <div class="header-user">
+            <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name"><?php echo $_SESSION['username'] ?? 'Student'; ?></span>
                     <span class="user-role">Student</span>
@@ -134,7 +130,11 @@ require_once __DIR__ . '/../backend/process_search_catalog.php';
                     <?php foreach ($books as $book): ?>
                         <div class="book-card">
                             <div class="book-cover">
-                                <i class="fas fa-book-open"></i>
+                                <?php if (!empty($book['book_image'])): ?>
+                                    <img src="../../../../<?php echo htmlspecialchars($book['book_image']); ?>" alt="Cover" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                                <?php else: ?>
+                                    <i class="fas fa-book-open"></i>
+                                <?php endif; ?>
                             </div>
                             <div class="book-info">
                                 <h3 title="<?php echo htmlspecialchars($book['title']); ?>"><?php echo htmlspecialchars($book['title']); ?></h3>
@@ -143,7 +143,7 @@ require_once __DIR__ . '/../backend/process_search_catalog.php';
                                 <?php if ($book['available_copies'] > 0): ?>
                                     <span class="status-pill available">Available (<?php echo $book['available_copies']; ?>)</span>
                                 <?php else: ?>
-                                    <span class="status-pill unavailable">Out of Stock</span>
+                                    <span class="status-pill unavailable">Not Available</span>
                                 <?php endif; ?>
                             </div>
                             <div class="book-footer">
@@ -152,7 +152,7 @@ require_once __DIR__ . '/../backend/process_search_catalog.php';
                                     data-title="<?php echo htmlspecialchars($book['title']); ?>"
                                     data-available="<?php echo $book['available_copies']; ?>"
                                     <?php echo $book['available_copies'] <= 0 ? 'disabled' : ''; ?>>
-                                    <?php echo $book['available_copies'] <= 0 ? 'Out of Stock' : 'Borrow Book'; ?>
+                                    <?php echo $book['available_copies'] <= 0 ? 'Not Available' : 'Borrow Book'; ?>
                                 </button>
                             </div>
                         </div>

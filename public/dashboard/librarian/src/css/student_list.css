@@ -38,7 +38,42 @@
     background: white;
     border-radius: 12px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid var(--border-light);
+}
+
+.users-table-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.users-table-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.tab-search-container {
+    position: sticky;
+    top: 0;
+    z-index: 11;
+    background: white;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.tab-search-container i {
+    color: var(--text-muted);
+}
+
+.tab-search-container input {
+    border: none;
+    outline: none;
+    font-size: 14px;
+    width: 100%;
+    font-family: inherit;
 }
 
 .users-table {
@@ -55,6 +90,9 @@
     color: var(--text-muted);
     text-transform: uppercase;
     border-bottom: 1px solid var(--border-light);
+    position: sticky;
+    top: 45px; /* Height of tab-search-container approx */
+    z-index: 10;
 }
 
 .users-table td {

@@ -136,6 +136,24 @@ try {
         }
     }
 
+    // --- Fetch New Books added since last view ---
+    $new_books_stmt = $pdo->prepare("SELECT title, author, created_at FROM books WHERE created_at > ? ORDER BY created_at DESC");
+    $new_books_stmt->execute([$last_view]);
+    $new_books = $new_books_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($new_books as $nb) {
+        $alerts[] = [
+            'title' => "New Book Added!",
+            'desc' => "The library has added '" . htmlspecialchars($nb['title']) . "' by " . htmlspecialchars($nb['author']) . " to the collection.",
+            'time' => $nb['created_at'],
+            'icon' => 'fa-book-medical',
+            'class' => 'icon-news',
+            'type' => 'news',
+            'unread' => true
+        ];
+        $unread_news++;
+    }
+
     $unread_count = $unread_reminders + $unread_news;
 
     // Sort alerts by time

@@ -55,11 +55,7 @@ require_once __DIR__ . '/../backend/process_notification.php';
     <!-- Main Content -->
     <main class="main-content">
         <header class="top-header animate-fade">
-            <div class="header-search">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search notifications...">
-            </div>
-            <div class="header-user">
+            <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name"><?php echo $_SESSION['username'] ?? 'Librarian'; ?></span>
                     <span class="user-role">Librarian</span>

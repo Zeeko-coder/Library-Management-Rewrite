@@ -39,7 +39,25 @@
     background: white;
     border-radius: 12px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    max-height: calc(100vh - 250px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) #f1f5f9;
+}
+
+.notif-feed-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.notif-feed-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.notif-feed-container::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 10px;
+    opacity: 0.5;
 }
 
 .notif-item {

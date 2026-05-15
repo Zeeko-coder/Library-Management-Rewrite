@@ -9,15 +9,20 @@ if (!isset($_SESSION['user_id'])) {
 
 $userId = $_SESSION['user_id'];
 
-// Fetch the role from the database to ensure it's current
-$sql = "SELECT role FROM users WHERE user_id = ?";
-$stmt = $pdo->prepare($sql);
-$stmt->execute([$userId]);
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
+$role = $_SESSION['role'] ?? '';
 
-if ($user) {
-    $role = $user['role'];
-    $_SESSION['role'] = $role; // Store role in session for access control
+// If role is missing from session, try to fetch it from database
+if (empty($role) && isset($_SESSION['user_id'])) {
+    $stmt = $pdo->prepare("SELECT role FROM users WHERE user_id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $user = $stmt->fetch();
+    if ($user) {
+        $role = $user['role'];
+        $_SESSION['role'] = $role;
+    }
+}
+
+if ($role) {
 
     // Redirect based on role
     if ($role === 'Admin') {

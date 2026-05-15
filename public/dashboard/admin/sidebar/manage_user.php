@@ -61,11 +61,7 @@ require_once __DIR__ . '/../backend/process_manage_user.php';
     <main class="main-content">
         <!-- Top Header -->
         <header class="top-header animate-fade">
-            <div class="header-search">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search for users by name or email...">
-            </div>
-            <div class="header-user">
+            <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name"><?php echo $_SESSION['username'] ?? 'System Admin'; ?></span>
                     <span class="user-role">Administrator</span>
@@ -99,17 +95,25 @@ require_once __DIR__ . '/../backend/process_manage_user.php';
                 <div class="alert alert-error animate-fade"><?php echo $error_msg; ?></div>
             <?php endif; ?>
 
-            <!-- Role Tabs -->
-            <div class="user-tabs animate-up delay-2">
-                <button class="tab-btn active" data-filter="all">All Users</button>
-                <button class="tab-btn" data-filter="Librarian">Librarians</button>
-                <button class="tab-btn" data-filter="Student">Students</button>
-                <button class="tab-btn" style="position: relative;" data-filter="Pending">
-                    Pending Approvals
-                    <?php if ($pending_count > 0): ?>
-                        <span style="position: absolute; top: -5px; right: -10px; background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px;"><?php echo $pending_count; ?></span>
-                    <?php endif; ?>
-                </button>
+            <!-- Role Tabs & Search -->
+            <div class="user-controls animate-up delay-2">
+                <div class="user-tabs">
+                    <button class="tab-btn active" data-filter="all">All Users</button>
+                    <button class="tab-btn" data-filter="Librarian">Librarians</button>
+                    <button class="tab-btn" data-filter="Student">Students</button>
+                    <button class="tab-btn" style="position: relative;" data-filter="Pending">
+                        Pending Approvals
+                        <?php if ($pending_count > 0): ?>
+                            <span style="position: absolute; top: -5px; right: -10px; background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px;"><?php echo $pending_count; ?></span>
+                        <?php endif; ?>
+                    </button>
+                </div>
+
+                <form action="manage_user.php" method="GET" class="table-search-container">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="search" id="tableSearchInput" class="table-search-input" placeholder="Quick search by name or email..." value="<?php echo htmlspecialchars($search); ?>">
+                    <button type="submit" id="searchBtn" class="search-btn">Search</button>
+                </form>
             </div>
 
             <!-- Users Table -->
@@ -140,6 +144,7 @@ require_once __DIR__ . '/../backend/process_manage_user.php';
                                         <div class="user-pfp"><?php echo $pfp_initials; ?></div>
                                         <div>
                                             <span class="user-name"><?php echo $fname . " " . $lname; ?></span>
+                                            <span class="user-id" style="font-size: 11px; color: var(--primary-color); font-weight: 500;">ID: <?php echo $user['user_id']; ?></span>
                                             <span class="user-email"><?php echo $email; ?></span>
                                         </div>
                                     </div>
@@ -172,7 +177,7 @@ require_once __DIR__ . '/../backend/process_manage_user.php';
                                         <form method="POST" style="display: flex; gap: 8px; align-items: center;">
                                             <input type="hidden" name="user_id" value="<?php echo $user['user_id']; ?>">
                                             <?php if ($status === 'Approved'): ?>
-                                                <input type="text" name="reason" placeholder="Deactivation reason..." style="font-size: 11px; padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); width: 120px;">
+                                                <input type="text" name="reason" placeholder="Deactivation reason..." style="font-size: 11px; padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); width: 120px;" required>
                                                 <div class="actions">
                                                     <button type="submit" name="action" value="deactivate" class="action-btn" style="background: #94a3b8; color: white; border-radius: 6px; padding: 5px 10px; font-size: 11px; width: auto; border: none; cursor: pointer;">Deactivate</button>
                                                     <button type="button" class="action-btn open-delete-modal" data-id="<?php echo $user['user_id']; ?>" data-name="<?php echo htmlspecialchars($fname . " " . $lname); ?>" style="background: #ef4444; color: white; border-radius: 6px; padding: 5px 10px; font-size: 11px; width: auto; border: none; cursor: pointer;">Delete</button>

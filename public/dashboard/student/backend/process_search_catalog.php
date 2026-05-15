@@ -8,13 +8,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Student') {
 include __DIR__ . '/../../../../database/db_connection.php';
 include __DIR__ . '/../../../../helpers/cryptography_process.php';
 
-$student_id = $_SESSION['user_id'];
+$user_id = $_SESSION['user_id'];
 
 // Get unread notification count for sidebar
 $unread_count = 0;
 try {
     $user_stmt = $pdo->prepare("SELECT last_notif_view FROM users WHERE user_id = ?");
-    $user_stmt->execute([$student_id]);
+    $user_stmt->execute([$user_id]);
     $last_view = $user_stmt->fetchColumn() ?: '1970-01-01 00:00:00';
 
     $notif_stmt = $pdo->prepare("SELECT COUNT(*) FROM borrowings 
@@ -24,13 +24,18 @@ try {
             (status IN ('overdue', 'Overdue') AND due_date > ?) OR
             (status = 'rejected' AND created_at > ?)
         )");
-    $notif_stmt->execute([$student_id, $last_view, $last_view, $last_view]);
+    $notif_stmt->execute([$user_id, $last_view, $last_view, $last_view]);
     $unread_count = $notif_stmt->fetchColumn();
 
     // Add manual notifications from the notifications table
     $manual_stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
-    $manual_stmt->execute([$student_id]);
+    $manual_stmt->execute([$user_id]);
     $unread_count += $manual_stmt->fetchColumn();
+
+    // Add notification for new books added since last view
+    $new_books_stmt = $pdo->prepare("SELECT COUNT(*) FROM books WHERE created_at > ?");
+    $new_books_stmt->execute([$last_view]);
+    $unread_count += $new_books_stmt->fetchColumn();
 } catch (PDOException $e) {
     $unread_count = 0;
 }
@@ -64,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['borrow_book'])) {
             throw new Exception("Not enough copies available.");
         }
 
-        // Check if user already has this book title borrowed (active loan)
+        // Check if user already has this book title borrowed (active borrow)
         $dup_stmt = $pdo->prepare("
             SELECT COUNT(*) 
             FROM borrowings br 
@@ -73,18 +78,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['borrow_book'])) {
             AND b.title = ? 
             AND br.status NOT IN ('returned', 'rejected', 'Returned', 'Rejected')
         ");
-        $dup_stmt->execute([$student_id, $book['title']]);
+        $dup_stmt->execute([$user_id, $book['title']]);
         if ($dup_stmt->fetchColumn() > 0) {
             throw new Exception("You have already borrowed this book title with borrow copies");
         }
 
         // Insert pending borrowing request
         $insert_stmt = $pdo->prepare("INSERT INTO borrowings (user_id, book_id, quantity, borrow_date, due_date, status) VALUES (?, ?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 7 DAY), 'pending')");
-        $insert_stmt->execute([$student_id, $book_id, $quantity]);
+        $insert_stmt->execute([$user_id, $book_id, $quantity]);
 
-        // Reserve the copies
-        $update_stmt = $pdo->prepare("UPDATE books SET available_copies = available_copies - ? WHERE book_id = ?");
-        $update_stmt->execute([$quantity, $book_id]);
+        // Reserve the copies and update status if necessary
+        $update_stmt = $pdo->prepare("UPDATE books SET 
+            available_copies = available_copies - ?,
+            status = CASE WHEN (available_copies - ?) <= 0 THEN 'Not Available' ELSE 'Available' END
+            WHERE book_id = ?");
+        $update_stmt->execute([$quantity, $quantity, $book_id]);
 
         $pdo->commit();
         $_SESSION['success_message'] = "Borrowing request for '" . $book['title'] . "' has been sent to the Librarian for approval.";

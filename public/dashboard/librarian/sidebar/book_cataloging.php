@@ -55,11 +55,7 @@ require_once __DIR__ . '/../backend/process_book_cataloging.php';
     <!-- Main Content -->
     <main class="main-content">
         <header class="top-header animate-fade">
-            <div class="header-search">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search for books in catalog...">
-            </div>
-            <div class="header-user">
+            <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name">Librarian</span>
                     <span class="user-role">Librarian</span>
@@ -130,13 +126,20 @@ require_once __DIR__ . '/../backend/process_book_cataloging.php';
                             </tr>
                         <?php else: ?>
                             <?php foreach ($all_books as $book):
-                                $status = $book['status'] ?? 'Available';
+                                $copies = (int)$book['available_copies'];
+                                $status = ($copies <= 0) ? 'Not Available' : ($book['status'] ?? 'Available');
                                 $badge_class = strtolower(str_replace(' ', '-', $status));
                             ?>
                                 <tr>
                                     <td>
                                         <div class="book-info-cell">
-                                            <div class="book-cover-mini"><i class="fas fa-book"></i></div>
+                                            <div class="book-cover-mini">
+                                                <?php if (!empty($book['book_image'])): ?>
+                                                    <img src="../../../../<?php echo htmlspecialchars($book['book_image']); ?>" alt="Cover" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                                                <?php else: ?>
+                                                    <i class="fas fa-book"></i>
+                                                <?php endif; ?>
+                                            </div>
                                             <div>
                                                 <span class="book-title"><?php echo htmlspecialchars($book['title']); ?></span>
                                                 <span class="book-isbn">ID: <?php echo $book['book_id']; ?></span>
@@ -155,8 +158,9 @@ require_once __DIR__ . '/../backend/process_book_cataloging.php';
                                                 data-author="<?php echo htmlspecialchars($book['author']); ?>"
                                                 data-category="<?php echo htmlspecialchars($book['category']); ?>"
                                                 data-copies="<?php echo $book['available_copies']; ?>"
-                                                data-status="<?php echo $book['status']; ?>"
-                                                data-date="<?php echo date('M d, Y', strtotime($book['created_at'])); ?>">
+                                                data-status="<?php echo $status; ?>"
+                                                data-date="<?php echo date('M d, Y', strtotime($book['created_at'])); ?>"
+                                                data-image="<?php echo !empty($book['book_image']) ? '../../../../' . htmlspecialchars($book['book_image']) : ''; ?>">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             <a href="#" class="action-btn btn-edit" title="Edit Book"
@@ -165,7 +169,8 @@ require_once __DIR__ . '/../backend/process_book_cataloging.php';
                                                 data-author="<?php echo htmlspecialchars($book['author']); ?>"
                                                 data-category="<?php echo htmlspecialchars($book['category']); ?>"
                                                 data-copies="<?php echo $book['available_copies']; ?>"
-                                                data-status="<?php echo $book['status']; ?>">
+                                                data-status="<?php echo $status; ?>"
+                                                data-image="<?php echo !empty($book['book_image']) ? '../../../../' . htmlspecialchars($book['book_image']) : ''; ?>">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                         </div>
@@ -189,7 +194,7 @@ require_once __DIR__ . '/../backend/process_book_cataloging.php';
             </div>
             <div class="modal-body" style="padding: 25px;">
                 <div style="display: flex; gap: 30px; margin-bottom: 25px;">
-                    <div style="width: 120px; height: 160px; background: #f1f5f9; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 50px; color: var(--primary-color);">
+                    <div id="viewBookCover" style="width: 120px; height: 160px; background: #f1f5f9; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 50px; color: var(--primary-color); overflow: hidden;">
                         <i class="fas fa-book"></i>
                     </div>
                     <div style="flex: 1;">
@@ -229,8 +234,17 @@ require_once __DIR__ . '/../backend/process_book_cataloging.php';
                 <h2>Edit Book</h2>
                 <span class="close-modal">&times;</span>
             </div>
-            <form action="book_cataloging.php" method="POST" class="modal-form">
+            <form action="book_cataloging.php" method="POST" class="modal-form" enctype="multipart/form-data">
                 <input type="hidden" name="book_id" id="editBookID">
+                <div class="form-group">
+                    <label>Book Image</label>
+                    <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 10px;">
+                        <div id="editImagePreview" style="width: 60px; height: 80px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                            <i class="fas fa-book" style="color: var(--primary-color);"></i>
+                        </div>
+                        <input type="file" name="book_image" id="editBookImage" accept="image/*" style="font-size: 13px;">
+                    </div>
+                </div>
                 <div class="form-group">
                     <label>Book Title</label>
                     <input type="text" name="title" id="editTitle" required placeholder="Enter book title">
@@ -246,7 +260,7 @@ require_once __DIR__ . '/../backend/process_book_cataloging.php';
                 <div class="form-row">
                     <div class="form-group">
                         <label>Available Copies</label>
-                        <input type="number" name="available_copies" id="editCopies" required min="1">
+                        <input type="number" name="available_copies" id="editCopies" required min="0">
                     </div>
                     <div class="form-group">
                         <label>Status</label>
