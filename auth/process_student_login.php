@@ -99,7 +99,21 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
                 exit();
             }
         } else if ($otpMethod === "sms") {
+            require_once '../helpers/sms_helper.php';
+            
             $phoneNumber = decryptionData($user['phone_number']);
+            $smsContent = "Your LibroTech verification code is: $otpCode. It will expire in 5 minutes.";
+            
+            $smsResult = sendUniSMS($phoneNumber, $smsContent);
+            
+            if ($smsResult['success']) {
+                header("Location: ../public/otp_verification.php");
+                exit();
+            } else {
+                $_SESSION['error'] = "Failed to send SMS: " . $smsResult['message'];
+                header("Location: ../public/studentLogin.php");
+                exit();
+            }
         }
     } else {
         $_SESSION['error'] = "Invalid username or password.";

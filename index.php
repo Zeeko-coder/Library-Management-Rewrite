@@ -106,9 +106,7 @@ $library_name = getSetting('library_name', 'LibroTech');
             </div>
             <div class="about-content">
                 <div class="about-image">
-                    <div class="image-placeholder">
-                        <i class="fas fa-building"></i>
-                    </div>
+                    <img src="img/about-laptop.png" alt="LibroTech Dashboard" class="floating-mockup">
                 </div>
                 <div class="about-text">
                     <h3>A Unified Library Management Ecosystem</h3>
