@@ -10,7 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $lastname = encryptionData(filter_input(INPUT_POST, 'lastname', FILTER_SANITIZE_SPECIAL_CHARS));
     $civilStatus = filter_input(INPUT_POST, 'civilStatus', FILTER_SANITIZE_SPECIAL_CHARS);
     $gender = filter_input(INPUT_POST, 'gender', FILTER_SANITIZE_SPECIAL_CHARS);
-    $phonenumber = encryptionData(filter_input(INPUT_POST, 'phonenumber', FILTER_SANITIZE_SPECIAL_CHARS));
+    $rawPhonenumber = filter_input(INPUT_POST, 'phonenumber', FILTER_SANITIZE_SPECIAL_CHARS);
+    $phonenumber = encryptionData($rawPhonenumber);
     $email = encryptionData(filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL));
     $username = encryptionData(filter_input(INPUT_POST, 'username', FILTER_SANITIZE_SPECIAL_CHARS));
     $password = $_POST['password'] ?? '';
@@ -22,6 +23,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         empty($phonenumber) || empty($email) || empty($username) || empty($password) || empty($confirmPassword)
     ) {
         $_SESSION['error'] = "All fields are required.";
+        header("Location: ../public/studentRegister.php");
+        exit();
+    }
+
+    // Phone number validation: must start with 63
+    if (strpos($rawPhonenumber, '63') !== 0) {
+        $_SESSION['error'] = "Phone number must start with 63 (e.g., 639631667321).";
         header("Location: ../public/studentRegister.php");
         exit();
     }

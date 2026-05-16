@@ -16,7 +16,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $lastname = encryptionData(filter_input(INPUT_POST, 'lastname', FILTER_SANITIZE_SPECIAL_CHARS));
     $civilStatus = filter_input(INPUT_POST, 'civilStatus', FILTER_SANITIZE_SPECIAL_CHARS);
     $gender = filter_input(INPUT_POST, 'gender', FILTER_SANITIZE_SPECIAL_CHARS);
-    $phonenumber = encryptionData(filter_input(INPUT_POST, 'phonenumber', FILTER_SANITIZE_SPECIAL_CHARS));
+    $rawPhonenumber = filter_input(INPUT_POST, 'phonenumber', FILTER_SANITIZE_SPECIAL_CHARS);
+    $phonenumber = encryptionData($rawPhonenumber);
     $email = encryptionData(filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL));
     $username = encryptionData(filter_input(INPUT_POST, 'username', FILTER_SANITIZE_SPECIAL_CHARS));
     $password = $_POST['password'] ?? '';
@@ -31,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: ../public/librarianRegister.php");
         exit();
     }
+
     //check user string length
 
     if (strlen($firstname) < 3) {
@@ -47,6 +49,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (strlen($username) < 2) {
         $_SESSION['error'] = "Username must be at least 2 characters long.";
+        header("Location: ../public/librarianRegister.php");
+        exit();
+    }
+
+    // Phone number validation: must start with 63
+    if (strpos($rawPhonenumber, '63') !== 0) {
+        $_SESSION['error'] = "Phone number must start with 63 (e.g., 639631667321).";
         header("Location: ../public/librarianRegister.php");
         exit();
     }

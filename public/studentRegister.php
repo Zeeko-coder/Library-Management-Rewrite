@@ -61,7 +61,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="phonenumber">Phone Number</label>
-                    <input type="tel" id="phonenumber" name="phonenumber" placeholder="e.g. 09123456789" required>
+                    <input type="tel" id="phonenumber" name="phonenumber" placeholder="e.g. 639123456789" required>
                 </div>
 
                 <div class="form-group">

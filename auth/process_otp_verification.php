@@ -85,8 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
     $userId = $_SESSION['temp_user_id'];
 
-    // Get user details for email
-    $userSql = "SELECT email, role FROM users WHERE user_id = ?";
+    // Get user details for OTP sending
+    $userSql = "SELECT email, phone_number, role FROM users WHERE user_id = ?";
     $userStmt = $pdo->prepare($userSql);
     $userStmt->execute([$userId]);
     $user = $userStmt->fetch(PDO::FETCH_ASSOC);
@@ -110,32 +110,53 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
     $insStmt = $pdo->prepare($insSql);
     $insStmt->execute([$userId, $otpCode, $expiry]);
 
-    // Send email
-    $mail = new PHPMailer(true);
-    try {
-        $mail->isSMTP();
-        $mail->Host       = SMTP_HOST;
-        $mail->SMTPAuth   = true;
-        $mail->Username   = SMTP_USER;
-        $mail->Password   = SMTP_PASS;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = SMTP_PORT;
+    // Send OTP based on method
+    $otpMethod = $_SESSION['otp_method'] ?? 'email';
 
-        $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
-        $mail->addAddress(decryptionData($user['email']));
+    if ($otpMethod === 'sms') {
+        require_once '../helpers/sms_helper.php';
+        $phoneNumber = decryptionData($user['phone_number']);
+        $smsContent = "Your LibroTech verification code is: $otpCode. It will expire in 5 minutes.";
+        
+        $smsResult = sendUniSMS($phoneNumber, $smsContent);
+        
+        if ($smsResult['success']) {
+            $_SESSION['success'] = "A new verification code has been sent to your phone.";
+            header("Location: ../public/otp_verification.php");
+            exit();
+        } else {
+            $_SESSION['error'] = "Failed to resend SMS: " . $smsResult['message'];
+            header("Location: ../public/otp_verification.php");
+            exit();
+        }
+    } else {
+        // Default to email
+        $mail = new PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->Host       = SMTP_HOST;
+            $mail->SMTPAuth   = true;
+            $mail->Username   = SMTP_USER;
+            $mail->Password   = SMTP_PASS;
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port       = SMTP_PORT;
 
-        $mail->isHTML(true);
-        $mail->Subject = 'Your Portal OTP (Resent)';
-        $mail->Body    = "Your verification code is: <b>$otpCode</b>. It will expire in 5 minutes.";
+            $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
+            $mail->addAddress(decryptionData($user['email']));
 
-        $mail->send();
+            $mail->isHTML(true);
+            $mail->Subject = 'Your Portal OTP (Resent)';
+            $mail->Body    = "Your verification code is: <b>$otpCode</b>. It will expire in 5 minutes.";
 
-        $_SESSION['success'] = "A new verification code has been sent to your email.";
-        header("Location: ../public/otp_verification.php");
-        exit();
-    } catch (Exception $e) {
-        $_SESSION['error'] = "Failed to send OTP email: " . $mail->ErrorInfo;
-        header("Location: ../public/otp_verification.php");
-        exit();
+            $mail->send();
+
+            $_SESSION['success'] = "A new verification code has been sent to your email.";
+            header("Location: ../public/otp_verification.php");
+            exit();
+        } catch (Exception $e) {
+            $_SESSION['error'] = "Failed to send OTP email: " . $mail->ErrorInfo;
+            header("Location: ../public/otp_verification.php");
+            exit();
+        }
     }
 }

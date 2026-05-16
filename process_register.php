@@ -50,9 +50,9 @@ if($_SERVER['REQUEST_METHOD'] === "POST") {
         exit();
     }
 
-    if (!preg_match('/^(09|\+639)\d{9}$/', $phoneNumber)) {
-        $_SESSION['fieldErrors']['phoneNumber'] = "Invalid local phone number.";
-        $_SESSION['registerError'] = "Please enter a valid Philippine phone number!";
+    if (!preg_match('/^639\d{9}$/', $phoneNumber)) {
+        $_SESSION['fieldErrors']['phoneNumber'] = "Phone number must start with 639 and be 12 digits long.";
+        $_SESSION['registerError'] = "Phone number must start with 63!";
         header("Location: index.html?error=" . urlencode($_SESSION['registerError']));
         exit();
     }
