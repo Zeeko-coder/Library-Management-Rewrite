@@ -120,6 +120,17 @@ body.dashboard-body {
     position: sticky;
     top: 0;
     z-index: 900;
+    gap: 20px;
+}
+
+.mobile-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--primary-dark);
+    cursor: pointer;
+    padding: 5px;
 }
 
 .header-search {
@@ -399,14 +410,41 @@ body.dashboard-body {
 @media (max-width: 768px) {
     .sidebar {
         left: -100%;
+        box-shadow: 10px 0 30px rgba(0,0,0,0.2);
+    }
+
+    .sidebar.active {
+        left: 0;
     }
 
     .main-content {
         margin-left: 0;
     }
 
+    .mobile-toggle {
+        display: block;
+    }
+
+    .top-header {
+        padding: 0 20px;
+    }
+
+    .user-info {
+        display: none;
+    }
+
+    .dashboard-container {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
     .top-header {
         padding: 0 15px;
+    }
+    
+    .sidebar {
+        width: 100%;
     }
 }
 

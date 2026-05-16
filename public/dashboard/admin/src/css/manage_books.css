@@ -186,6 +186,19 @@
 }
 
 /* Modal Styles */
+.modal-content {
+    background-color: white;
+    margin: 0;
+    padding: 0;
+    border-radius: var(--border-radius-lg);
+    width: 90%;
+    max-width: 550px;
+    max-height: 90vh;
+    box-shadow: var(--shadow-lg);
+    overflow-y: auto;
+    animation: modalSlideDown 0.3s ease-out;
+}
+
 .modal {
     display: none;
     position: fixed;
@@ -196,17 +209,8 @@
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
-}
-
-.modal-content {
-    background-color: white;
-    margin: 5% auto;
-    padding: 0;
-    border-radius: var(--border-radius-lg);
-    width: 500px;
-    box-shadow: var(--shadow-lg);
-    overflow: hidden;
-    animation: modalSlideDown 0.3s ease-out;
+    align-items: center;
+    justify-content: center;
 }
 
 @keyframes modalSlideDown {
@@ -329,4 +333,46 @@
     background: #eff6ff;
     color: #1e40af;
     border: 1px solid #bfdbfe;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .management-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .management-header h1 {
+        font-size: 20px;
+    }
+
+    .btn-primary {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-group {
+        width: 100%;
+    }
+
+    .books-table-container {
+        overflow-x: auto;
+    }
+
+    .books-table th,
+    .books-table td {
+        padding: 12px 15px;
+        white-space: nowrap;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
 }

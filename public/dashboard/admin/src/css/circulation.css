@@ -190,22 +190,48 @@
     background: white;
     padding: 20px;
     border-radius: 12px;
-    border-left: 4px solid var(--primary-color);
     box-shadow: var(--shadow-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.circ-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
 }
 
 .circ-stat-card h4 {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-lighter);
     text-transform: uppercase;
     margin-bottom: 5px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
 .circ-stat-card .value {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 700;
     color: var(--text-dark);
 }
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.icon-pending { background: #fff7ed; color: #f59e0b; }
+.icon-active { background: #eff6ff; color: #3b82f6; }
+.icon-overdue { background: #fef2f2; color: #ef4444; }
+.icon-returned { background: #f0fdf4; color: #10b981; }
+.icon-rejected { background: #f9fafb; color: #64748b; }
 
 /* Transaction Table */
 .table-container {

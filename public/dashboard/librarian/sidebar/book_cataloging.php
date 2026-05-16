@@ -55,6 +55,9 @@ require_once __DIR__ . '/../backend/process_book_cataloging.php';
     <!-- Main Content -->
     <main class="main-content">
         <header class="top-header animate-fade">
+            <button id="sidebarToggle" class="mobile-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name">Librarian</span>
@@ -79,11 +82,29 @@ require_once __DIR__ . '/../backend/process_book_cataloging.php';
             <!-- Search Bar -->
             <form action="book_cataloging.php" method="GET" class="filter-bar animate-up delay-2">
                 <div class="filter-group" style="flex: 1;">
-                    <label>Search book</label>
+                    <label>Search Books</label>
                     <input type="text" name="search" placeholder="Search by title, author, or category..." value="<?php echo htmlspecialchars($search); ?>">
                 </div>
+                <div class="filter-group">
+                    <label>Category</label>
+                    <select name="category">
+                        <option value="">All Categories</option>
+                        <?php foreach ($categories as $cat): ?>
+                            <option value="<?php echo htmlspecialchars($cat); ?>" <?php echo $category_filter === $cat ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($cat); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Availability</label>
+                    <select name="availability">
+                        <option value="">All Books</option>
+                        <option value="Available Only" <?php echo $availability_filter === 'Available Only' ? 'selected' : ''; ?>>Available Only</option>
+                    </select>
+                </div>
                 <button type="submit" class="btn btn-primary" style="margin-top: auto; height: 42px; padding: 0 30px;">
-                    <i class="fas fa-search"></i> Search Books
+                    <i class="fas fa-filter"></i> Apply Filters
                 </button>
             </form>
 
@@ -113,7 +134,7 @@ require_once __DIR__ . '/../backend/process_book_cataloging.php';
                             <th>Category</th>
                             <th>Available Copies</th>
                             <th>Status</th>
-                            <th>Actions</th>
+                            <th style="width: 100px; text-align: center;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -159,6 +180,8 @@ require_once __DIR__ . '/../backend/process_book_cataloging.php';
                                                 data-category="<?php echo htmlspecialchars($book['category']); ?>"
                                                 data-copies="<?php echo $book['available_copies']; ?>"
                                                 data-status="<?php echo $status; ?>"
+                                                data-description="<?php echo htmlspecialchars($book['description'] ?? ''); ?>"
+                                                data-year="<?php echo htmlspecialchars($book['year_published'] ?? ''); ?>"
                                                 data-date="<?php echo date('M d, Y', strtotime($book['created_at'])); ?>"
                                                 data-image="<?php echo !empty($book['book_image']) ? '../../../../' . htmlspecialchars($book['book_image']) : ''; ?>">
                                                 <i class="fas fa-eye"></i>
@@ -170,6 +193,8 @@ require_once __DIR__ . '/../backend/process_book_cataloging.php';
                                                 data-category="<?php echo htmlspecialchars($book['category']); ?>"
                                                 data-copies="<?php echo $book['available_copies']; ?>"
                                                 data-status="<?php echo $status; ?>"
+                                                data-description="<?php echo htmlspecialchars($book['description'] ?? ''); ?>"
+                                                data-year="<?php echo htmlspecialchars($book['year_published'] ?? ''); ?>"
                                                 data-image="<?php echo !empty($book['book_image']) ? '../../../../' . htmlspecialchars($book['book_image']) : ''; ?>">
                                                 <i class="fas fa-edit"></i>
                                             </a>
@@ -198,7 +223,7 @@ require_once __DIR__ . '/../backend/process_book_cataloging.php';
                         <i class="fas fa-book"></i>
                     </div>
                     <div style="flex: 1;">
-                        <h3 id="viewTitle" style="font-size: 20px; margin-bottom: 5px;">Book Title</h3>
+                        <h3 id="viewTitle" style="font-size: 20px; margin-bottom: 5px; color: var(--primary-color);">Book Title</h3>
                         <p id="viewAuthor" style="color: var(--text-muted); margin-bottom: 15px;">By Author Name</p>
                         <span id="viewStatus" class="badge">Available</span>
                     </div>
@@ -220,6 +245,14 @@ require_once __DIR__ . '/../backend/process_book_cataloging.php';
                         <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; margin-bottom: 5px;">Date Added</label>
                         <span id="viewDate" style="font-weight: 500;">May 05, 2026</span>
                     </div>
+                    <div>
+                        <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; margin-bottom: 5px;">Year Published</label>
+                        <span id="viewYear" style="font-weight: 500;">2024</span>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; background: #f8fafc; padding: 20px; border-radius: 12px;">
+                    <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; margin-bottom: 5px;">Description</label>
+                    <p id="viewDescription" style="font-size: 14px; line-height: 1.6; color: var(--text-dark); margin: 0;"></p>
                 </div>
             </div>
             <div class="modal-footer" style="padding: 20px 25px;">
@@ -253,9 +286,19 @@ require_once __DIR__ . '/../backend/process_book_cataloging.php';
                     <label>Author</label>
                     <input type="text" name="author" id="editAuthor" required placeholder="Enter author name">
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <input type="text" name="category" id="editCategory" required placeholder="e.g. Computer Science">
+                    </div>
+                    <div class="form-group">
+                        <label>Year Published</label>
+                        <input type="number" name="year_published" id="editYear" required placeholder="e.g. 2024">
+                    </div>
+                </div>
                 <div class="form-group">
-                    <label>Category</label>
-                    <input type="text" name="category" id="editCategory" required placeholder="e.g. Computer Science">
+                    <label>Description</label>
+                    <textarea name="description" id="editDescription" rows="3" placeholder="Enter book description..." style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; resize: vertical;"></textarea>
                 </div>
                 <div class="form-row">
                     <div class="form-group">

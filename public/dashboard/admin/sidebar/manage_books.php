@@ -61,6 +61,9 @@ require_once __DIR__ . '/../backend/process_manage_books.php';
     <main class="main-content">
         <!-- Top Header -->
         <header class="top-header animate-fade">
+            <button id="sidebarToggle" class="mobile-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name"><?php echo $_SESSION['username'] ?? 'System Admin'; ?></span>
@@ -175,6 +178,8 @@ require_once __DIR__ . '/../backend/process_manage_books.php';
                                                 data-category="<?php echo htmlspecialchars($book['category']); ?>"
                                                 data-copies="<?php echo $book['available_copies']; ?>"
                                                 data-status="<?php echo $status; ?>"
+                                                data-description="<?php echo htmlspecialchars($book['description'] ?? ''); ?>"
+                                                data-year="<?php echo htmlspecialchars($book['year_published'] ?? ''); ?>"
                                                 data-image="<?php echo !empty($book['book_image']) ? '../../../../' . $book['book_image'] : '../../../../img/book_placeholder.png'; ?>"
                                                 data-date="<?php echo date('M d, Y', strtotime($book['created_at'])); ?>">
                                                 <i class="fas fa-eye"></i>
@@ -185,7 +190,9 @@ require_once __DIR__ . '/../backend/process_manage_books.php';
                                                 data-author="<?php echo htmlspecialchars($book['author']); ?>"
                                                 data-category="<?php echo htmlspecialchars($book['category']); ?>"
                                                 data-copies="<?php echo $book['available_copies']; ?>"
-                                                data-status="<?php echo $status; ?>">
+                                                data-status="<?php echo $status; ?>"
+                                                data-description="<?php echo htmlspecialchars($book['description'] ?? ''); ?>"
+                                                data-year="<?php echo htmlspecialchars($book['year_published'] ?? ''); ?>">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <a href="#" class="action-btn btn-delete" title="Delete Book"
@@ -224,9 +231,19 @@ require_once __DIR__ . '/../backend/process_manage_books.php';
                     <label>Author</label>
                     <input type="text" name="author" required placeholder="Enter author name">
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <input type="text" name="category" required placeholder="e.g. Computer Science">
+                    </div>
+                    <div class="form-group">
+                        <label>Year Published</label>
+                        <input type="number" name="year_published" required placeholder="e.g. 2024" value="<?php echo date('Y'); ?>">
+                    </div>
+                </div>
                 <div class="form-group">
-                    <label>Category</label>
-                    <input type="text" name="category" required placeholder="e.g. Computer Science">
+                    <label>Description</label>
+                    <textarea name="description" rows="3" placeholder="Enter book description..." style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; resize: vertical;"></textarea>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -283,6 +300,14 @@ require_once __DIR__ . '/../backend/process_manage_books.php';
                         <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-lighter); font-weight: 600; margin-bottom: 5px;">Date Added</label>
                         <span id="viewDate" style="font-weight: 500;">May 05, 2026</span>
                     </div>
+                    <div>
+                        <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-lighter); font-weight: 600; margin-bottom: 5px;">Year Published</label>
+                        <span id="viewYear" style="font-weight: 500;">2024</span>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; background: #f8fafc; padding: 20px; border-radius: 12px;">
+                    <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-lighter); font-weight: 600; margin-bottom: 5px;">Description</label>
+                    <p id="viewDescription" style="font-size: 14px; line-height: 1.6; color: var(--text-dark); margin: 0;"></p>
                 </div>
             </div>
             <div class="modal-footer" style="padding: 20px 25px;">
@@ -311,9 +336,19 @@ require_once __DIR__ . '/../backend/process_manage_books.php';
                     <label>Author</label>
                     <input type="text" name="author" id="editAuthor" required placeholder="Enter author name">
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <input type="text" name="category" id="editCategory" required placeholder="e.g. Computer Science">
+                    </div>
+                    <div class="form-group">
+                        <label>Year Published</label>
+                        <input type="number" name="year_published" id="editYear" required placeholder="e.g. 2024">
+                    </div>
+                </div>
                 <div class="form-group">
-                    <label>Category</label>
-                    <input type="text" name="category" id="editCategory" required placeholder="e.g. Computer Science">
+                    <label>Description</label>
+                    <textarea name="description" id="editDescription" rows="3" placeholder="Enter book description..." style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; resize: vertical;"></textarea>
                 </div>
                 <div class="form-row">
                     <div class="form-group">

@@ -9,14 +9,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Librarian') {
     exit();
 }
 
-// Update last notification view timestamp
-try {
-    $pdo->prepare("UPDATE users SET last_notif_view = NOW() WHERE user_id = ?")->execute([$_SESSION['user_id']]);
-} catch (PDOException $e) {
-    // Silently fail if update fails
-}
-
-// Get unread notification count for sidebar (will be 0 after update above)
+// Get unread notification count for sidebar (calculate BEFORE marking as read)
 $unread_count = 0;
 try {
     $user_stmt = $pdo->prepare("SELECT last_notif_view FROM users WHERE user_id = ?");
@@ -61,7 +54,7 @@ try {
             'type' => 'overdue',
             'icon' => 'fa-clock',
             'class' => 'icon-alert',
-            'link' => 'circulation.php'
+            'link' => 'student_list.php?tab=overdue'
         ];
     }
 
@@ -84,7 +77,7 @@ try {
             'type' => 'request',
             'icon' => 'fa-book-reader',
             'class' => 'icon-info',
-            'link' => 'student_list.php'
+            'link' => 'student_list.php?tab=requests'
         ];
     }
 
@@ -102,7 +95,7 @@ try {
             'type' => $type,
             'icon' => ($type === 'reminder' ? 'fa-bell' : 'fa-info-circle'),
             'class' => ($type === 'reminder' ? 'icon-alert' : 'icon-success'),
-            'link' => '#'
+            'link' => 'student_list.php'
         ];
     }
 
@@ -119,4 +112,12 @@ try {
 }
 
 $overdue_count = count(array_filter($alerts, fn($a) => $a['type'] === 'overdue'));
+$request_count = count(array_filter($alerts, fn($a) => $a['type'] === 'request'));
+
+// Update last notification view timestamp after displaying
+try {
+    $pdo->prepare("UPDATE users SET last_notif_view = NOW() WHERE user_id = ?")->execute([$_SESSION['user_id']]);
+} catch (PDOException $e) {
+    // Silently fail
+}
 ?>

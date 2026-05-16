@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Open Add Modal
     openAddBtn.addEventListener('click', () => {
-        addModal.style.display = 'block';
+        addModal.style.display = 'flex';
     });
 
     // Delete Confirmation Logic
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             deleteTitle.textContent = bookTitle;
             deleteIdInput.value = bookId;
-            deleteModal.style.display = 'block';
+            deleteModal.style.display = 'flex';
         });
     });
 
@@ -45,13 +45,15 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('viewCategory').textContent = data.category;
             document.getElementById('viewCopies').textContent = data.copies;
             document.getElementById('viewDate').textContent = data.date;
+            document.getElementById('viewYear').textContent = data.year || 'N/A';
+            document.getElementById('viewDescription').textContent = data.description || 'No description available.';
             document.getElementById('viewImage').src = data.image;
 
             const statusBadge = document.getElementById('viewStatus');
             statusBadge.textContent = data.status;
             statusBadge.className = 'badge badge-' + data.status.toLowerCase().replace(' ', '-');
 
-            viewModal.style.display = 'block';
+            viewModal.style.display = 'flex';
         });
     });
 
@@ -67,8 +69,10 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('editCategory').value = data.category;
             document.getElementById('editCopies').value = data.copies;
             document.getElementById('editStatus').value = data.status;
+            document.getElementById('editYear').value = data.year || '';
+            document.getElementById('editDescription').value = data.description || '';
 
-            editModal.style.display = 'block';
+            editModal.style.display = 'flex';
         });
     });
 

@@ -59,6 +59,9 @@ require_once __DIR__ . '/../backend/process_my_profile.php';
     <!-- Main Content -->
     <main class="main-content">
         <header class="top-header animate-fade">
+            <button id="sidebarToggle" class="mobile-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name"><?php echo htmlspecialchars($full_name); ?></span>

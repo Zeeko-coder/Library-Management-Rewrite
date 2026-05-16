@@ -22,21 +22,51 @@ try {
     $overdue_stmt = $pdo->prepare("SELECT COUNT(*) FROM borrowings WHERE (status = 'borrowed' OR status = 'overdue') AND due_date < NOW() AND due_date > ?");
     $overdue_stmt->execute([$last_view]);
     $unread_count += $overdue_stmt->fetchColumn();
+
+    $manual_stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
+    $manual_stmt->execute([$_SESSION['user_id']]);
+    $unread_count += $manual_stmt->fetchColumn();
 } catch (PDOException $e) {
     $unread_count = 0;
 }
 
-// Fetch books from database
-$search = $_GET['search'] ?? '';
+// Fetch categories for filter
 try {
+    $cat_stmt = $pdo->query("SELECT DISTINCT category FROM books WHERE category IS NOT NULL AND category != '' ORDER BY category ASC");
+    $categories = $cat_stmt->fetchAll(PDO::FETCH_COLUMN);
+} catch (PDOException $e) {
+    $categories = [];
+}
+
+// Search and Filter Logic
+$search = $_GET['search'] ?? '';
+$category_filter = $_GET['category'] ?? '';
+$availability_filter = $_GET['availability'] ?? '';
+
+try {
+    $sql = "SELECT * FROM books WHERE 1=1";
+    $params = [];
+
     if (!empty($search)) {
-        $stmt = $pdo->prepare("SELECT * FROM books WHERE title LIKE ? OR author LIKE ? OR category LIKE ? ORDER BY book_id ASC");
-        $stmt->execute(["%$search%", "%$search%", "%$search%"]);
-        $all_books = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } else {
-        $books_stmt = $pdo->query("SELECT * FROM books ORDER BY book_id ASC");
-        $all_books = $books_stmt->fetchAll(PDO::FETCH_ASSOC);
+        $sql .= " AND (title LIKE ? OR author LIKE ? OR category LIKE ?)";
+        $params[] = "%$search%";
+        $params[] = "%$search%";
+        $params[] = "%$search%";
     }
+
+    if (!empty($category_filter)) {
+        $sql .= " AND category = ?";
+        $params[] = $category_filter;
+    }
+
+    if ($availability_filter === 'Available Only') {
+        $sql .= " AND available_copies > 0";
+    }
+
+    $sql .= " ORDER BY book_id ASC";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $all_books = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $all_books = [];
 }
@@ -51,6 +81,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_book'])) {
     $category = $_POST['category'];
     $available_copies = (int)$_POST['available_copies'];
     $status = ($available_copies <= 0) ? 'Not Available' : $_POST['status'];
+    $description = $_POST['description'] ?? '';
+    $year_published = (int)($_POST['year_published'] ?? date('Y'));
     
     // Image handling
     $book_image = null;
@@ -85,11 +117,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_book'])) {
 
     try {
         if ($book_image) {
-            $stmt = $pdo->prepare("UPDATE books SET title = ?, author = ?, category = ?, available_copies = ?, status = ?, book_image = ? WHERE book_id = ?");
-            $stmt->execute([$title, $author, $category, $available_copies, $status, $book_image, $book_id]);
+            $stmt = $pdo->prepare("UPDATE books SET title = ?, author = ?, category = ?, available_copies = ?, status = ?, book_image = ?, description = ?, year_published = ? WHERE book_id = ?");
+            $stmt->execute([$title, $author, $category, $available_copies, $status, $book_image, $description, $year_published, $book_id]);
         } else {
-            $stmt = $pdo->prepare("UPDATE books SET title = ?, author = ?, category = ?, available_copies = ?, status = ? WHERE book_id = ?");
-            $stmt->execute([$title, $author, $category, $available_copies, $status, $book_id]);
+            $stmt = $pdo->prepare("UPDATE books SET title = ?, author = ?, category = ?, available_copies = ?, status = ?, description = ?, year_published = ? WHERE book_id = ?");
+            $stmt->execute([$title, $author, $category, $available_copies, $status, $description, $year_published, $book_id]);
         }
         $_SESSION['success_message'] = "Book updated successfully!";
         header("Location: book_cataloging.php");

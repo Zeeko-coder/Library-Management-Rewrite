@@ -59,14 +59,15 @@ require_once __DIR__ . '/../backend/process_search_catalog.php';
     <!-- Main Content -->
     <main class="main-content">
         <header class="top-header animate-fade">
+            <button id="sidebarToggle" class="mobile-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
-                    <span class="user-name"><?php echo $_SESSION['username'] ?? 'Student'; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($full_name); ?></span>
                     <span class="user-role">Student</span>
                 </div>
-                <div class="user-avatar">
-                    <?php echo isset($_SESSION['username']) ? strtoupper(substr($_SESSION['username'], 0, 2)) : 'ST'; ?>
-                </div>
+                <div class="user-avatar"><?php echo $initials; ?></div>
             </div>
         </header>
 
@@ -114,7 +115,7 @@ require_once __DIR__ . '/../backend/process_search_catalog.php';
                         <option value="Available Only" <?php echo $availability_filter === 'Available Only' ? 'selected' : ''; ?>>Available Only</option>
                     </select>
                 </div>
-                <button type="submit" class="btn-borrow" style="margin-top: auto; padding: 10px 20px;">
+                <button type="submit" class="btn-borrow" style="margin-top: auto; padding: 10px 20px; width: auto;">
                     <i class="fas fa-filter"></i> Apply
                 </button>
             </form>
@@ -154,6 +155,15 @@ require_once __DIR__ . '/../backend/process_search_catalog.php';
                                     <?php echo $book['available_copies'] <= 0 ? 'disabled' : ''; ?>>
                                     <?php echo $book['available_copies'] <= 0 ? 'Not Available' : 'Borrow Book'; ?>
                                 </button>
+                                <button class="btn-view-desc" 
+                                    style="width: 100%; background: #f8fafc; color: var(--primary-color); border: 1px solid #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 10.5px; font-weight: 500; cursor: pointer; transition: all 0.2s;"
+                                    data-title="<?php echo htmlspecialchars($book['title']); ?>"
+                                    data-author="<?php echo htmlspecialchars($book['author']); ?>"
+                                    data-year="<?php echo htmlspecialchars($book['year_published'] ?? 'N/A'); ?>"
+                                    data-image="<?php echo !empty($book['book_image']) ? '../../../../' . htmlspecialchars($book['book_image']) : '../../../../img/book_placeholder.png'; ?>"
+                                    data-desc="<?php echo htmlspecialchars($book['description'] ?? 'No description available.'); ?>">
+                                    <i class="fas fa-info-circle" style="font-size: 11px;"></i> View Details
+                                </button>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -186,9 +196,36 @@ require_once __DIR__ . '/../backend/process_search_catalog.php';
                     </p>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" name="borrow_book" class="btn-borrow">Submit Request</button>
+                    <button type="submit" name="borrow_book" class="btn-borrow" style="width: auto;">Submit Request</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Description Modal -->
+    <div id="descModal" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <div class="modal-header">
+                <h2>Book Description</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 25px; overflow-y: auto;">
+                <div style="display: flex; gap: 25px; margin-bottom: 25px; align-items: flex-start;">
+                    <div style="width: 120px; height: 170px; background: #f1f5f9; border-radius: 10px; overflow: hidden; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                        <img id="descImage" src="../../../../img/book_placeholder.png" alt="Book Cover" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div style="flex: 1;">
+                        <h3 id="descTitle" style="font-size: 22px; margin-bottom: 8px; color: var(--primary-color); line-height: 1.2;">Book Title</h3>
+                        <p id="descAuthor" style="color: var(--text-muted); margin-bottom: 5px; font-weight: 500; font-size: 15px;">By Author Name</p>
+                        <p id="descYear" style="font-size: 13px; color: var(--text-lighter); margin-bottom: 20px;">Published: 2024</p>
+                    </div>
+                </div>
+                
+                <div style="background: #f8fafc; padding: 20px; border-radius: 12px;">
+                    <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; margin-bottom: 10px; letter-spacing: 0.5px;">Synopsis / Description</label>
+                    <p id="descText" style="line-height: 1.7; color: var(--text-dark); margin: 0; white-space: pre-line; font-size: 14.5px;"></p>
+                </div>
+            </div>
         </div>
     </div>
 

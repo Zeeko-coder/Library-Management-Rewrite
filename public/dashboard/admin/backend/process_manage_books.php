@@ -38,6 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_book'])) {
     $category = $_POST['category'];
     $available_copies = (int)$_POST['available_copies'];
     $status = $_POST['status'];
+    $description = $_POST['description'] ?? '';
+    $year_published = (int)($_POST['year_published'] ?? date('Y'));
     $added_by = $_SESSION['user_id'] ?? 0; // Use session user_id
 
     // File upload handling
@@ -58,8 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_book'])) {
 
     try {
         $status = ($available_copies <= 0) ? 'Not Available' : $_POST['status'];
-        $stmt = $pdo->prepare("INSERT INTO books (title, author, category, book_image, available_copies, status, added_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $author, $category, $book_image, $available_copies, $status, $added_by]);
+        $stmt = $pdo->prepare("INSERT INTO books (title, author, category, book_image, available_copies, status, description, year_published, added_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$title, $author, $category, $book_image, $available_copies, $status, $description, $year_published, $added_by]);
         $_SESSION['success_message'] = "Book added successfully!";
         header("Location: manage_books.php");
         exit();
@@ -76,10 +78,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_book'])) {
     $category = $_POST['category'];
     $available_copies = (int)$_POST['available_copies'];
     $status = $_POST['status'];
+    $description = $_POST['description'] ?? '';
+    $year_published = (int)($_POST['year_published'] ?? date('Y'));
 
     // File upload handling
     $image_update = "";
-    $params = [$title, $author, $category, $available_copies, $status];
+    $params = [$title, $author, $category, $available_copies, $status, $description, $year_published];
     if (isset($_FILES['book_image']) && $_FILES['book_image']['error'] === 0) {
         $allowed = ['jpg', 'jpeg', 'png', 'webp'];
         $filename = $_FILES['book_image']['name'];
@@ -107,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_book'])) {
 
     try {
         $status = ($available_copies <= 0) ? 'Not Available' : $_POST['status'];
-        $stmt = $pdo->prepare("UPDATE books SET title = ?, author = ?, category = ?, available_copies = ?, status = ? $image_update WHERE book_id = ?");
+        $stmt = $pdo->prepare("UPDATE books SET title = ?, author = ?, category = ?, available_copies = ?, status = ?, description = ?, year_published = ? $image_update WHERE book_id = ?");
         $stmt->execute($params);
         $_SESSION['success_message'] = "Book updated successfully!";
         header("Location: manage_books.php");

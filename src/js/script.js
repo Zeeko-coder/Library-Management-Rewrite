@@ -137,8 +137,15 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeModal(loginModal);
         closeModal(registerModal);
+        closeModal(document.getElementById('successModal'));
     }
 });
+
+// Close success modal events
+const closeSuccess = document.getElementById('closeSuccess');
+if (closeSuccess) {
+    closeSuccess.addEventListener('click', () => closeModal(document.getElementById('successModal')));
+}
 
 // ===== Learn More Button - Smooth Scroll to About =====
 if (learnMoreBtn) {
@@ -185,15 +192,44 @@ if (loginForm) {
 if (contactForm) {
     contactForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        const submitBtn = contactForm.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.textContent;
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending...';
+
         const formData = new FormData(contactForm);
-        const data = Object.fromEntries(formData);
 
-        // Simulate contact form submission
-        console.log('Contact form:', data);
-
-        // Show success message
-        alert('Thank you for your message! We will get back to you soon.');
-        contactForm.reset();
+        fetch('backend/process_contact.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const successModal = document.getElementById('successModal');
+                const successMsg = document.getElementById('successMessage');
+                if (successModal && successMsg) {
+                    successMsg.textContent = data.message;
+                    openModal(successModal);
+                } else {
+                    alert(data.message);
+                }
+                contactForm.reset();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again later.');
+        })
+        .finally(() => {
+            // Restore button state
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+        });
     });
 }
 

@@ -105,4 +105,22 @@ document.addEventListener('DOMContentLoaded', function () {
             setTimeout(() => alert.remove(), 500);
         }, 5000);
     });
+
+    // Mobile Sidebar Toggle
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
+
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sidebar.classList.toggle('active');
+        });
+
+        // Close sidebar when clicking outside
+        document.addEventListener('click', (e) => {
+            if (sidebar && sidebar.classList.contains('active') && !sidebar.contains(e.target) && e.target !== sidebarToggle) {
+                sidebar.classList.remove('active');
+            }
+        });
+    }
 });

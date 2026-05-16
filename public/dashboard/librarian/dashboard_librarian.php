@@ -23,6 +23,10 @@ try {
     $overdue_stmt = $pdo->prepare("SELECT COUNT(*) FROM borrowings WHERE (status = 'borrowed' OR status = 'overdue') AND due_date < NOW() AND due_date > ?");
     $overdue_stmt->execute([$last_view]);
     $unread_count += $overdue_stmt->fetchColumn();
+
+    $manual_stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
+    $manual_stmt->execute([$_SESSION['user_id']]);
+    $unread_count += $manual_stmt->fetchColumn();
 } catch (PDOException $e) {
     $unread_count = 0;
 }
@@ -174,6 +178,9 @@ function getTimeAgo($timestamp)
     <main class="main-content">
         <!-- Top Header -->
         <header class="top-header animate-fade">
+            <button id="sidebarToggle" class="mobile-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name"><?php echo $_SESSION['username'] ?? 'Librarian'; ?></span>

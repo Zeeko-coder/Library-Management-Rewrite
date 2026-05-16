@@ -246,16 +246,16 @@ $library_name = getSetting('library_name', 'LibroTech');
                 <div class="contact-form">
                     <form id="contactForm">
                         <div class="form-group">
-                            <input type="text" placeholder="Your Name" required>
+                            <input type="text" name="name" placeholder="Your Name" required>
                         </div>
                         <div class="form-group">
-                            <input type="email" placeholder="Your Email" required>
+                            <input type="email" name="email" placeholder="Your Email" required>
                         </div>
                         <div class="form-group">
-                            <input type="text" placeholder="Subject">
+                            <input type="text" name="subject" placeholder="Subject">
                         </div>
                         <div class="form-group">
-                            <textarea placeholder="Your Message" rows="5" required></textarea>
+                            <textarea name="message" placeholder="Your Message" rows="5" required></textarea>
                         </div>
                         <button type="submit" class="btn btn-primary btn-block">Send Message</button>
                     </form>
@@ -263,6 +263,23 @@ $library_name = getSetting('library_name', 'LibroTech');
             </div>
         </div>
     </section>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <button class="modal-close" id="closeSuccess">&times;</button>
+            <div class="modal-header">
+                <h2>Message Sent!</h2>
+            </div>
+            <div class="modal-body" style="padding: 0 30px 30px;">
+                <div style="width: 80px; height: 80px; background: #dcfce7; color: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 40px;">
+                    <i class="fas fa-check"></i>
+                </div>
+                <p id="successMessage" style="color: var(--text-light); margin-bottom: 25px;"></p>
+                <button class="btn btn-primary btn-block" onclick="closeModal(document.getElementById('successModal'))">Understood</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="footer">

@@ -120,7 +120,8 @@
 
 .actions {
     display: flex;
-    gap: 10px;
+    gap: 8px;
+    justify-content: center;
 }
 
 .action-btn {
@@ -175,9 +176,11 @@
     margin: 0;
     padding: 0;
     border-radius: 12px;
-    width: 500px;
+    width: 90%;
+    max-width: 550px;
+    max-height: 90vh;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    overflow-y: auto;
     animation: modalSlideDown 0.3s ease-out;
 }
 

@@ -62,6 +62,9 @@ require_once __DIR__ . '/../backend/process_circulation.php';
     <main class="main-content">
         <!-- Top Header -->
         <header class="top-header animate-fade">
+            <button id="sidebarToggle" class="mobile-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name"><?php echo $_SESSION['username'] ?? 'System Admin'; ?></span>
@@ -92,25 +95,50 @@ require_once __DIR__ . '/../backend/process_circulation.php';
 
             <!-- Circulation Stats -->
             <div class="circ-stats animate-up delay-2">
-                <div class="circ-stat-card" style="border-left-color: #f59e0b;">
-                    <h4>Pending</h4>
-                    <div class="value"><?php echo number_format($pending_count); ?></div>
+                <div class="circ-stat-card">
+                    <div class="stat-content">
+                        <h4>Pending</h4>
+                        <div class="value"><?php echo number_format($pending_count); ?></div>
+                    </div>
+                    <div class="stat-icon icon-pending">
+                        <i class="fas fa-clock"></i>
+                    </div>
                 </div>
-                <div class="circ-stat-card" style="border-left-color: #3b82f6;">
-                    <h4>Active</h4>
-                    <div class="value"><?php echo number_format($active_borrows); ?></div>
+                <div class="circ-stat-card">
+                    <div class="stat-content">
+                        <h4>Active</h4>
+                        <div class="value"><?php echo number_format($active_borrows); ?></div>
+                    </div>
+                    <div class="stat-icon icon-active">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
                 </div>
-                <div class="circ-stat-card" style="border-left-color: #ef4444;">
-                    <h4>Overdue</h4>
-                    <div class="value"><?php echo number_format($overdue_books); ?></div>
+                <div class="circ-stat-card">
+                    <div class="stat-content">
+                        <h4>Overdue</h4>
+                        <div class="value"><?php echo number_format($overdue_books); ?></div>
+                    </div>
+                    <div class="stat-icon icon-overdue">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
                 </div>
-                <div class="circ-stat-card" style="border-left-color: #10b981;">
-                    <h4>Returned</h4>
-                    <div class="value"><?php echo number_format($returned_total); ?></div>
+                <div class="circ-stat-card">
+                    <div class="stat-content">
+                        <h4>Returned</h4>
+                        <div class="value"><?php echo number_format($returned_total); ?></div>
+                    </div>
+                    <div class="stat-icon icon-returned">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
                 </div>
-                <div class="circ-stat-card" style="border-left-color: #64748b;">
-                    <h4>Rejected</h4>
-                    <div class="value"><?php echo number_format($rejected_count); ?></div>
+                <div class="circ-stat-card">
+                    <div class="stat-content">
+                        <h4>Rejected</h4>
+                        <div class="value"><?php echo number_format($rejected_count); ?></div>
+                    </div>
+                    <div class="stat-icon icon-rejected">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
                 </div>
             </div>
 

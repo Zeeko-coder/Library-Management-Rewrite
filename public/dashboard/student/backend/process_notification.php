@@ -17,9 +17,13 @@ $unread_news = 0;
 $alerts = [];
 
 try {
-    $user_stmt = $pdo->prepare("SELECT last_notif_view FROM users WHERE user_id = ?");
+    $user_stmt = $pdo->prepare("SELECT last_notif_view, first_name, last_name FROM users WHERE user_id = ?");
     $user_stmt->execute([$user_id]);
-    $last_view = $user_stmt->fetchColumn() ?: '1970-01-01 00:00:00';
+    $user_data = $user_stmt->fetch(PDO::FETCH_ASSOC);
+    $last_view = $user_data['last_notif_view'] ?: '1970-01-01 00:00:00';
+
+    $full_name = decryptionData($user_data['first_name']) . " " . decryptionData($user_data['last_name']);
+    $initials = strtoupper(substr(decryptionData($user_data['first_name']), 0, 1) . substr(decryptionData($user_data['last_name']), 0, 1));
 
     // Fetch all borrowings for this student to generate notifications
     $stmt = $pdo->prepare("
@@ -169,5 +173,7 @@ try {
 } catch (PDOException $e) {
     $unread_count = $unread_reminders = $unread_news = 0;
     $alerts = [];
+    $full_name = "Student";
+    $initials = "ST";
 }
 ?>

@@ -56,9 +56,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // Get unread notification count for sidebar
 $unread_count = 0;
 try {
-    $user_stmt = $pdo->prepare("SELECT last_notif_view FROM users WHERE user_id = ?");
+    $user_stmt = $pdo->prepare("SELECT last_notif_view, first_name, last_name FROM users WHERE user_id = ?");
     $user_stmt->execute([$user_id]);
-    $last_view = $user_stmt->fetchColumn() ?: '1970-01-01 00:00:00';
+    $user_data = $user_stmt->fetch(PDO::FETCH_ASSOC);
+    $last_view = $user_data['last_notif_view'] ?: '1970-01-01 00:00:00';
+
+    $full_name = decryptionData($user_data['first_name']) . " " . decryptionData($user_data['last_name']);
+    $initials = strtoupper(substr(decryptionData($user_data['first_name']), 0, 1) . substr(decryptionData($user_data['last_name']), 0, 1));
 
     $notif_stmt = $pdo->prepare("SELECT COUNT(*) FROM borrowings 
         WHERE user_id = ? 

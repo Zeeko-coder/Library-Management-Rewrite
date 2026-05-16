@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('borrowModal');
+    const descModal = document.getElementById('descModal');
     const closeBtns = document.querySelectorAll('.close-modal');
     const borrowBtns = document.querySelectorAll('.btn-borrow[data-id]');
+    const viewDescBtns = document.querySelectorAll('.btn-view-desc');
 
     const modalBookId = document.getElementById('modalBookId');
     const modalBookTitle = document.getElementById('modalBookTitle');
@@ -9,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const availableHint = document.getElementById('availableHint');
 
     if (borrowBtns) {
+        // ... existing borrow logic ...
         borrowBtns.forEach(btn => {
             btn.addEventListener('click', function() {
                 const id = this.getAttribute('data-id');
@@ -20,7 +23,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (modalQuantity) modalQuantity.max = available;
                 if (availableHint) availableHint.textContent = 'Available copies: ' + available;
 
-                if (modal) modal.style.display = 'block';
+                if (modal) modal.style.display = 'flex';
+            });
+        });
+    }
+
+    if (viewDescBtns) {
+        viewDescBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const data = this.dataset;
+                document.getElementById('descTitle').textContent = data.title;
+                document.getElementById('descAuthor').textContent = 'By ' + data.author;
+                document.getElementById('descYear').textContent = 'Published: ' + data.year;
+                document.getElementById('descText').textContent = data.desc;
+                document.getElementById('descImage').src = data.image;
+                
+                if (descModal) descModal.style.display = 'flex';
             });
         });
     }
@@ -29,13 +47,35 @@ document.addEventListener('DOMContentLoaded', function() {
         closeBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 if (modal) modal.style.display = 'none';
+                if (descModal) descModal.style.display = 'none';
             });
         });
     }
 
     window.addEventListener('click', (e) => {
         if (e.target === modal) {
-            if (modal) modal.style.display = 'none';
+            modal.style.display = 'none';
+        }
+        if (e.target === descModal) {
+            descModal.style.display = 'none';
         }
     });
+
+    // Mobile Sidebar Toggle
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
+
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sidebar.classList.toggle('active');
+        });
+
+        // Close sidebar when clicking outside
+        document.addEventListener('click', (e) => {
+            if (sidebar.classList.contains('active') && !sidebar.contains(e.target) && e.target !== sidebarToggle) {
+                sidebar.classList.remove('active');
+            }
+        });
+    }
 });

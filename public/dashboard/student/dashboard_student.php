@@ -39,6 +39,12 @@ try {
     $new_books_stmt = $pdo->prepare("SELECT COUNT(*) FROM books WHERE created_at > ?");
     $new_books_stmt->execute([$last_view]);
     $unread_count += $new_books_stmt->fetchColumn();
+
+    $user_data_stmt = $pdo->prepare("SELECT first_name, last_name FROM users WHERE user_id = ?");
+    $user_data_stmt->execute([$student_id]);
+    $user_data = $user_data_stmt->fetch(PDO::FETCH_ASSOC);
+    $full_name = decryptionData($user_data['first_name']) . " " . decryptionData($user_data['last_name']);
+    $initials = strtoupper(substr(decryptionData($user_data['first_name']), 0, 1) . substr(decryptionData($user_data['last_name']), 0, 1));
 } catch (PDOException $e) {
     $unread_count = 0;
 }
@@ -132,24 +138,22 @@ $currently_borrowing = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <main class="main-content">
         <!-- Top Header -->
         <header class="top-header animate-fade">
+            <button id="sidebarToggle" class="mobile-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
-                    <span class="user-name"><?php echo $_SESSION['username'] ?? 'Student User'; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($full_name); ?></span>
                     <span class="user-role">Student</span>
                 </div>
-                <div class="user-avatar">
-                    <?php
-                    $initials = isset($_SESSION['username']) ? strtoupper(substr($_SESSION['username'], 0, 2)) : 'ST';
-                    echo $initials;
-                    ?>
-                </div>
+                <div class="user-avatar"><?php echo $initials; ?></div>
             </div>
         </header>
 
         <!-- Dashboard Container -->
         <div class="dashboard-container">
             <div class="welcome-section animate-up delay-1">
-                <h1>Hello, <?php echo $_SESSION['username'] ?? 'Student'; ?>!</h1>
+                <h1>Hello, <?php echo htmlspecialchars($full_name); ?>!</h1>
                 <p>Welcome back to your digital library. What would you like to read today?</p>
             </div>
 

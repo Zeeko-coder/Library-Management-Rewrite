@@ -28,16 +28,15 @@ try {
     $overdue_stmt = $pdo->prepare("SELECT COUNT(*) FROM borrowings WHERE (status = 'borrowed' OR status = 'overdue') AND due_date < NOW() AND due_date > ?");
     $overdue_stmt->execute([$last_view]);
     $unread_count += $overdue_stmt->fetchColumn();
+
+    $manual_stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
+    $manual_stmt->execute([$_SESSION['user_id']]);
+    $unread_count += $manual_stmt->fetchColumn();
 } catch (PDOException $e) {
     $unread_count = 0;
 }
 
-// Update last notification view timestamp
-try {
-    $pdo->prepare("UPDATE users SET last_notif_view = NOW() WHERE user_id = ?")->execute([$_SESSION['user_id']]);
-} catch (PDOException $e) {
-    // Silently fail
-}
+// End of notification count logic
 
 $success_message = $_SESSION['success_message'] ?? "";
 $error_message = $_SESSION['error_message'] ?? "";

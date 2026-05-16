@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('viewCategory').textContent = data.category;
             document.getElementById('viewCopies').textContent = data.copies;
             document.getElementById('viewDate').textContent = data.date;
+            document.getElementById('viewYear').textContent = data.year || 'N/A';
+            document.getElementById('viewDescription').textContent = data.description || 'No description available.';
 
             const statusBadge = document.getElementById('viewStatus');
             statusBadge.textContent = data.status;
@@ -50,6 +52,8 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('editCategory').value = data.category;
             document.getElementById('editCopies').value = data.copies;
             document.getElementById('editStatus').value = data.status;
+            document.getElementById('editYear').value = data.year || '';
+            document.getElementById('editDescription').value = data.description || '';
 
             // Handle Image Preview
             const editPreview = document.getElementById('editImagePreview');

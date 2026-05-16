@@ -84,4 +84,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    // Handle Tab via URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam) {
+        const targetTab = document.querySelector(`.tab-btn[data-tab="${tabParam}"]`);
+        if (targetTab) {
+            targetTab.click();
+        }
+    }
 });

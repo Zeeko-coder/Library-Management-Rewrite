@@ -2,22 +2,37 @@ document.addEventListener('DOMContentLoaded', function() {
     const tabs = document.querySelectorAll('.tab-btn');
     const items = document.querySelectorAll('.notif-item');
 
+    function switchTab(filter) {
+        tabs.forEach(t => {
+            if (t.getAttribute('data-filter') === filter) {
+                t.classList.add('active');
+            } else {
+                t.classList.remove('active');
+            }
+        });
+
+        items.forEach(item => {
+            if (filter === 'all' || item.getAttribute('data-type') === filter) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             const filter = tab.getAttribute('data-filter');
-            
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-
-            items.forEach(item => {
-                if (filter === 'all' || item.getAttribute('data-type') === filter) {
-                    item.style.display = 'flex';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
+            switchTab(filter);
         });
     });
+
+    // Handle URL parameters for tab switching
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab') || urlParams.get('filter');
+    if (tabParam) {
+        switchTab(tabParam);
+    }
 
     // Dismiss functionality (local only for now)
     const dismissBtns = document.querySelectorAll('.btn-dismiss');

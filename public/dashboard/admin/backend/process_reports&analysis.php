@@ -50,7 +50,8 @@ try {
     ");
     $top_books = $top_books_stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    $total_borrows = $unique_borrowers = $returned_books = $overdue_count = 0;
-    $category_data = $top_books = [];
+    $total_borrows = $unique_borrowers = $returned_books = $overdue_count = $pending_count = $rejected_count = 0;
+    $category_data = $top_books = $trend_data = [];
+    $status_dist = ['borrowed' => 0, 'returned' => 0, 'pending' => 0, 'overdue' => 0, 'rejected' => 0];
 }
 ?>

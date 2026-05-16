@@ -69,6 +69,9 @@ require_once __DIR__ . '/backend/process_dashboard_admin.php';
     <main class="main-content">
         <!-- Top Header -->
         <header class="top-header animate-fade">
+            <button id="sidebarToggle" class="mobile-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="header-user" style="margin-left: auto;">
                 <div class="user-info">
                     <span class="user-name"><?php echo $_SESSION['username'] ?? 'System Admin'; ?></span>

@@ -1,9 +1,9 @@
 <?php
 
 define('SMTP_HOST', 'smtp.gmail.com');
-define('SMTP_USER', 'myelnicholaiquimbo@gmail.com');
-define('SMTP_PASS', 'kkei gehp opls tikw');
+define('SMTP_USER', 'librotech05@gmail.com');
+define('SMTP_PASS', 'uxrh efks oksv ppyv');
 define('SMTP_PORT', 587);
-define('SMTP_FROM_EMAIL', 'myelnicholaiquimbo@gmail.com');
-define('SMTP_FROM_NAME', 'Login Security');
+define('SMTP_FROM_EMAIL', 'librotech05@gmail.com');
+define('SMTP_FROM_NAME', 'LibroTech');
 define('OTP_EXPIRY_SECONDS', 300);
