@@ -1,0 +1,38 @@
+Slide 1: Introduction About This System
+What is LibroTech?
+A comprehensive, web-based Library Management System designed to automate book circulation, secure user access, and eliminate manual record-keeping errors.
+
+Target Users & Roles:
+👑 Admin: Has top-level control. Approves all new user/librarian registrations and manages global system settings.
+📚 Librarian: Manages the physical book catalog (add/edit/delete), oversees borrowing transactions, and can send manual reminders.
+🎓 Student: Can browse the library catalog, check real-time book availability, request borrows, and track their due dates.
+
+Slide 2: System Integration Architecture
+(Visual Idea: You can insert your Flowchart here to show how data moves)
+Core Architecture: Built on a robust Client-Server architecture using PHP and MySQL.
+Third-Party Integrations:
+Authentication Gateway: Integrates with an SMS/Email API to generate and deliver dynamic One-Time Passwords (OTP) for secure logins.
+Notification Engine: Connects to an SMTP Email server to push automated alerts to students without requiring human intervention.
+
+Slide 3: Database Design
+(Visual Idea: Paste your Mermaid ERM Diagram here)
+Normalization: The database is strictly designed following the 3rd Normal Form (3NF) to ensure zero data redundancy and prevent update anomalies.
+Key Design Features:
+Independent Entities: Authors and Categories have their own dedicated tables, linked to the books table via Foreign Keys.
+Secure Transactions: The borrowings junction table safely tracks exactly which user has which book, recording strict borrow and return timestamps.
+Ephemeral Data: The otp table handles temporary security codes that expire after a set duration.
+
+Slide 4: System Features
+Strict Access Control: New registrations are locked in a "Pending" state until manually verified and approved by an Admin.
+Two-Factor Authentication (2FA): Every successful login requires a secondary verification step using an SMS or Email OTP.
+Automated Due-Date Reminders: The system tracks the calendar and automatically sends Email reminders to students when their borrowed books are approaching the due date.
+Real-Time Inventory: The system automatically checks book availability and updates the available_copies count the second a borrow request is approved.
+
+Slide 5: Future Improvements (Advanced)
+Automated Book Cataloging (API Integration): Upgrading the inventory system to automatically fetch book details (title, author, cover image) from external APIs (like Google Books) using just the ISBN.
+AI-Powered Recommendations: Implementing a machine learning algorithm to analyze borrowing history and suggest relevant books to students on their dashboard.
+Smart RFID Inventory Auditing: Integrating Radio Frequency Identification (RFID) technology to instantly scan entire shelves, replacing manual counting and quickly detecting misplaced books.
+
+Slide 6: Conclusion
+Summary: LibroTech effectively transforms manual library administration into a highly cohesive, digital ecosystem built on a foundation of strict data normalization and automated workflows.
+Final Impact: By integrating dynamic OTP security and automated communication channels, the system significantly enhances operational efficiency, eliminates human error in record-keeping, and delivers a modern, highly secure library experience.
